@@ -1,0 +1,32 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.*
+
+# builds
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# test output
+coverage/
+
+# env
+.env
+.env.local
+.env.*.local
+
+# vercel
+.vercel
+
+# editor / os
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+
+# logs
+*.log
+npm-debug.log*
