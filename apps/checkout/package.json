@@ -5,7 +5,7 @@
   "description": "The hosted Perch checkout. Runs inside the iframe; card details never leave this origin.",
   "scripts": {
     "dev": "next dev --port 3001",
-    "build": "next build",
+    "build": "node ../../packages/sdk/build.mjs && next build",
     "start": "next start --port 3001",
     "lint": "eslint",
     "typecheck": "tsc --noEmit"

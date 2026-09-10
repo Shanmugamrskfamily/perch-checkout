@@ -1,26 +1,84 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/**
+ * Perch checkout — design tokens.
+ *
+ * Light only, deliberately. This document renders inside a white panel on
+ * somebody else's page, and a checkout that follows the customer's system dark
+ * mode would appear as a dark rectangle floating in a light frame. The panel
+ * and the form have to look like one object.
+ *
+ * The palette is narrow on purpose: one ink, three greys, one accent, and two
+ * status colours. A payment form earns trust by looking unremarkable. Anything
+ * that reads as decoration reads as somebody trying too hard, on the one screen
+ * where a customer is deciding whether to trust you with a card number.
+ */
+@theme {
+  --color-ink: #10151b;
+  --color-ink-soft: #5b6472;
+  --color-ink-faint: #8d95a1;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-line: #e7e9ee;
+  --color-line-strong: #cfd4dd;
+
+  --color-surface: #ffffff;
+  --color-sunken: #f7f8fa;
+
+  /* Deep teal. Reads considered rather than corporate, and holds its contrast
+     against white at small sizes, which a lighter brand blue would not. */
+  --color-accent: #0e5b62;
+  --color-accent-strong: #0a464b;
+
+  --color-positive: #0d6b45;
+  --color-critical: #a4291f;
+  --color-critical-tint: #fdf3f2;
+  --color-caution: #7a5200;
+  --color-caution-tint: #fdf8ee;
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* No height rules on the root elements, deliberately. The host sizes the frame
+   from the height this document reports, so anything that stretches the body to
+   the viewport would report the frame's own height straight back and the panel
+   could never shrink to fit its content. */
+body {
+  /* Transparent, not white. The panel behind us owns the background and its
+     rounded corners; painting our own would square them off at the edges. */
+  background: transparent;
+  color: var(--color-ink);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/**
+ * The merchant's accent, if they sent one and it survived the allowlist.
+ *
+ * Applied as a variable on a wrapper rather than by generating classes, so the
+ * value only ever reaches CSS through a custom property. A colour that failed
+ * validation never gets here at all — see sanitiseTheme in @perch/protocol.
+ */
+[data-perch-theme] {
+  --color-accent: var(--perch-accent, #0e5b62);
+  --color-accent-strong: var(--perch-accent-strong, #0a464b);
+}
+
+/* Focus is never removed, only replaced. Somebody paying by keyboard needs to
+   know where they are, and this is the last place to be clever about it. */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

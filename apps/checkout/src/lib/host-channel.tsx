@@ -153,6 +153,11 @@ export function HostChannelProvider({
 
       if (message.type === "requestClose") {
         handleCloseRequest();
+        return;
+      }
+
+      if (message.type === "focus") {
+        moveFocusToEdge(message.edge);
       }
     };
 
@@ -186,15 +191,40 @@ export function HostChannelProvider({
   /* Report the document's natural height so the host can size the iframe to the
      content. Measured rather than guessed, because the checkout's height
      changes as errors appear and receipts replace forms. */
+  /**
+   * Keeps the host's iframe the same height as this document.
+   *
+   * Measured from `body`, not `documentElement`: the root element is at least
+   * as tall as the viewport, so measuring it would report the iframe's own
+   * current height straight back and the panel could only ever grow.
+   *
+   * Two triggers, and the split matters. The render pass is the primary one,
+   * because every height change we cause ourselves — a decline banner
+   * appearing, the form giving way to a receipt — happens on a render, and a
+   * measurement taken there always arrives. `ResizeObserver` is the supplement,
+   * for the changes React knows nothing about, such as a webfont landing and
+   * reflowing the text. Relying on the observer alone means that if it never
+   * fires, the panel keeps its opening guess forever.
+   */
+  const lastHeightRef = useRef(0);
+
+  const publishHeight = useCallback(() => {
+    const height = Math.ceil(document.body.getBoundingClientRect().height);
+    if (height < 1) return;
+    /* Sub-pixel churn would otherwise post a message on every render. */
+    if (Math.abs(height - lastHeightRef.current) < 2) return;
+    lastHeightRef.current = height;
+    send({ type: "resize", height });
+  }, [send]);
+
+  useEffect(publishHeight);
+
   useEffect(() => {
     if (typeof window === "undefined" || !("ResizeObserver" in window)) return;
-    const target = document.documentElement;
-    const observer = new ResizeObserver(() => {
-      send({ type: "resize", height: Math.ceil(target.getBoundingClientRect().height) });
-    });
-    observer.observe(target);
+    const observer = new ResizeObserver(publishHeight);
+    observer.observe(document.body);
     return () => observer.disconnect();
-  }, [send]);
+  }, [publishHeight]);
 
   const value = useMemo<HostChannel>(
     () => ({
@@ -270,6 +300,39 @@ export function assessEmbedding(facts: EmbeddingFacts): HostLink {
   if (referrerOrigin && referrerOrigin !== safeOrigin(facts.claimedOrigin)) return refused;
 
   return { status: "waiting" };
+}
+
+/**
+ * Everything a keyboard can reach, in document order.
+ *
+ * Deliberately a plain query rather than a library. The checkout is a short
+ * form of our own making, so the exotic cases a general-purpose focus library
+ * exists to handle — nested shadow roots, `contenteditable`, elements hidden by
+ * a parent's overflow — cannot arise here. Hidden elements are filtered by
+ * `offsetParent`, which is the cheap check that catches the ones that can.
+ */
+const FOCUSABLE = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  '[tabindex]:not([tabindex="-1"])',
+].join(",");
+
+/**
+ * Takes focus back at one end of the form.
+ *
+ * The other half of the trap. The host cannot move focus inside this document,
+ * so it asks, and this is the answer.
+ */
+function moveFocusToEdge(edge: "first" | "last"): void {
+  const candidates = Array.from(
+    document.querySelectorAll<HTMLElement>(FOCUSABLE),
+  ).filter((element) => element.offsetParent !== null);
+
+  const target = edge === "first" ? candidates[0] : candidates[candidates.length - 1];
+  target?.focus();
 }
 
 function safeOrigin(value: string | undefined | null): string | null {

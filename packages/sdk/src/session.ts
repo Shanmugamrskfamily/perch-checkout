@@ -85,6 +85,12 @@ export function startSession(config: SessionConfig): Session {
   const overlay: Overlay = createOverlay({
     src: url.toString(),
     onDismiss: () => requestClose(),
+    onFocusEscape: (edge) => {
+      /* Only meaningful once the checkout is live. Before that there is nothing
+         inside the frame to give focus to. */
+      if (!ready || finished) return;
+      send({ type: "focus", edge });
+    },
   });
 
   function send(message: HostMessage): void {

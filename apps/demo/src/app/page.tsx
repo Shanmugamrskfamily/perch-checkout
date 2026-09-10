@@ -1,101 +1,129 @@
 "use client";
 
 /**
- * Phase 1 store front.
+ * Kestrel Supply Co. — a shop that has installed Perch.
  *
- * Deliberately plain for now. What it proves is the integration: one script
- * tag, one call, and a log showing exactly which callbacks fired and when. The
- * real store, with product imagery and the test-mode panel, lands in phase 3.
+ * It integrates the way any real site would: one script tag, one call, three
+ * callbacks. Nothing here imports from the SDK's source or shares a build with
+ * it. If this page can do something, so can any merchant.
+ *
+ * The callback log is the point of the page. It shows exactly what crosses back
+ * from the checkout, which is also a demonstration of how little that is.
  */
 
 import Script from "next/script";
 import { useCallback, useRef, useState } from "react";
 import { PERCH_SCRIPT_URL, type PerchHandle } from "@/lib/perch";
+import { TestCards } from "./test-cards";
+import { CallbackLog, type LogEntry } from "./callback-log";
 
-interface LogEntry {
-  readonly id: number;
-  readonly at: string;
-  readonly label: string;
-  readonly detail: string;
-}
+const PRODUCT_ID = "prod_notebook";
 
 export default function StorePage() {
-  const [log, setLog] = useState<LogEntry[]>([]);
-  const [scriptReady, setScriptReady] = useState(false);
+  const [entries, setEntries] = useState<LogEntry[]>([]);
+  const [ready, setReady] = useState(false);
   const handleRef = useRef<PerchHandle | null>(null);
   const nextId = useRef(0);
 
-  const record = useCallback((label: string, detail: string) => {
-    setLog((entries) => [
-      {
-        id: nextId.current++,
-        at: new Date().toLocaleTimeString([], { hour12: false }),
-        label,
-        detail,
-      },
-      ...entries,
+  const log = useCallback((kind: LogEntry["kind"], label: string, detail: string) => {
+    setEntries((current) => [
+      { id: nextId.current++, at: new Date(), kind, label, detail },
+      ...current,
     ]);
   }, []);
 
   const buy = useCallback(() => {
     if (!window.Perch) {
-      record("error", "perch.js has not loaded");
+      log("error", "perch.js", "The script has not loaded yet.");
       return;
     }
 
-    record("open", "Perch.open({ productId: 'prod_notebook' })");
+    log("call", "Perch.open", `productId: "${PRODUCT_ID}"`);
 
     handleRef.current = window.Perch.open({
-      productId: "prod_notebook",
-      onSuccess: ({ sessionId }) => record("onSuccess", `sessionId: ${sessionId}`),
-      onError: ({ code, message }) => record("onError", `${code} — ${message}`),
-      onClose: ({ reason }) => record("onClose", `reason: ${reason}`),
+      productId: PRODUCT_ID,
+
+      onSuccess: ({ sessionId }) => {
+        log("success", "onSuccess", sessionId);
+        /* A real shop would NOT ship the goods here. This callback runs in the
+           customer's browser and anyone can call it from a console. Fulfilment
+           belongs on the server, when Perch's signed webhook arrives. Treated
+           here as what it is: permission to update the interface. */
+      },
+
+      onError: ({ code, message }) => log("error", "onError", `${code} — ${message}`),
+
+      onClose: ({ reason }) => log("close", "onClose", `reason: "${reason}"`),
     });
-  }, [record]);
+  }, [log]);
 
   return (
-    <main className="mx-auto flex min-h-full w-full max-w-2xl flex-col gap-8 px-6 py-16">
+    <main className="mx-auto flex min-h-full w-full max-w-5xl flex-col gap-12 px-6 py-12 md:py-16">
       <Script
         src={PERCH_SCRIPT_URL}
         strategy="afterInteractive"
-        onReady={() => setScriptReady(true)}
-        onError={() => record("error", "perch.js failed to load")}
+        onReady={() => setReady(true)}
+        onError={() => log("error", "perch.js", "The script failed to load.")}
       />
 
-      <header className="flex flex-col gap-1">
-        <h1 className="text-xl font-semibold tracking-tight">Demo store</h1>
-        <p className="text-sm text-neutral-500">
-          A pretend shop that embeds Perch through the public script tag.
-        </p>
+      <header className="flex items-baseline justify-between border-b border-line pb-5">
+        <span className="text-[15px] font-semibold tracking-tight">Kestrel Supply Co.</span>
+        <span className="text-[12px] text-ink-faint">Bengaluru · ships worldwide</span>
       </header>
 
-      <button
-        type="button"
-        onClick={buy}
-        disabled={!scriptReady}
-        className="w-fit rounded-lg bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-40"
-      >
-        {scriptReady ? "Buy notebook" : "Loading checkout…"}
-      </button>
+      <div className="grid gap-10 md:grid-cols-[1.1fr_1fr] md:gap-14">
+        <section className="flex flex-col gap-6">
+          <Notebook />
 
-      <section className="flex flex-col gap-2">
-        <h2 className="text-xs font-medium uppercase tracking-wide text-neutral-400">
-          Callbacks
-        </h2>
-        {log.length === 0 ? (
-          <p className="text-sm text-neutral-400">Nothing yet.</p>
-        ) : (
-          <ol className="flex flex-col gap-1 font-mono text-xs">
-            {log.map((entry) => (
-              <li key={entry.id} className="flex gap-3">
-                <span className="text-neutral-400">{entry.at}</span>
-                <span className="font-medium">{entry.label}</span>
-                <span className="text-neutral-500">{entry.detail}</span>
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
+          <div className="flex flex-col gap-2">
+            <h1 className="text-[26px] font-semibold leading-tight tracking-tight">
+              Field Notebook
+            </h1>
+            <p className="max-w-sm text-[14.5px] leading-relaxed text-ink-soft">
+              Ninety-six pages of dot grid on heavy cream paper, sewn so it opens flat and stays
+              that way. Made a mile from where we pack it.
+            </p>
+            <p className="mt-1 text-[20px] font-semibold tabular-nums">₹1,450.00</p>
+            <p className="text-[12.5px] text-ink-faint">
+              Tax added at checkout, based on where you are.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={buy}
+            disabled={!ready}
+            className="w-fit rounded-xl bg-ink px-7 py-3 text-[15px] font-medium text-paper transition-opacity duration-150 hover:opacity-90 disabled:opacity-40"
+          >
+            {ready ? "Buy now" : "Loading checkout…"}
+          </button>
+        </section>
+
+        <aside className="flex flex-col gap-8">
+          <TestCards />
+          <CallbackLog entries={entries} />
+        </aside>
+      </div>
     </main>
+  );
+}
+
+/** A drawn product image, so the demo carries no binary assets. */
+function Notebook() {
+  return (
+    <div className="flex aspect-[4/3] w-full items-center justify-center rounded-2xl border border-line bg-card">
+      <svg width="150" height="190" viewBox="0 0 150 190" role="img" aria-label="A dot grid notebook">
+        <rect x="14" y="10" width="122" height="168" rx="7" fill="#2c2721" />
+        <rect x="22" y="16" width="120" height="164" rx="6" fill="#efe9dd" />
+        <rect x="22" y="16" width="10" height="164" fill="#d9d1c2" />
+        <g fill="#b9ae9a">
+          {Array.from({ length: 9 }).map((_, row) =>
+            Array.from({ length: 6 }).map((__, col) => (
+              <circle key={`${row}-${col}`} cx={48 + col * 16} cy={40 + row * 16} r="1.4" />
+            )),
+          )}
+        </g>
+      </svg>
+    </div>
   );
 }
