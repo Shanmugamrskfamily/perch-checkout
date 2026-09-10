@@ -1,14 +1,9 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": ["ES2020", "DOM"],
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "types": ["jest", "node"],
-
-    /* The SDK is dropped into someone else's page, so it is compiled under the
-       strictest settings available. Anything the compiler can catch here is a
-       bug we do not ship to a stranger's website. */
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
@@ -16,7 +11,6 @@
     "noFallthroughCasesInSwitch": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
