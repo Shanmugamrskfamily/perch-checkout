@@ -1,0 +1,38 @@
+{
+  "name": "perch-checkout",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Perch — an embeddable checkout you'd be comfortable putting on a stranger's website.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "build:sdk": "npm run build --workspace @perch/sdk",
+    "watch:sdk": "npm run watch --workspace @perch/sdk",
+    "dev:checkout": "npm run dev --workspace @perch/checkout",
+    "dev:demo": "npm run dev --workspace @perch/demo",
+    "dev": "concurrently --names sdk,checkout,demo --prefix-colors magenta,cyan,green \"npm:watch:sdk\" \"npm:dev:checkout\" \"npm:dev:demo\"",
+    "build": "npm run build:sdk && npm run build --workspace @perch/checkout && npm run build --workspace @perch/demo",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "npm run lint --workspace @perch/checkout && npm run lint --workspace @perch/demo",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/jest": "^29.5.14",
+    "concurrently": "^9.1.2",
+    "esbuild": "^0.24.2",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.7.3"
+  }
+}

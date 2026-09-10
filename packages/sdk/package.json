@@ -1,0 +1,14 @@
+{
+  "name": "@perch/sdk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The Perch embed script. Plain TypeScript, zero runtime dependencies.",
+  "type": "module",
+  "main": "./dist/perch.js",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch",
+    "typecheck": "tsc --noEmit"
+  }
+}
