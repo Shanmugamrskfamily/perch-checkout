@@ -315,6 +315,21 @@ Roughly in the order I would actually do them.
 - **Wallets.** UPI in India, Apple Pay and Google Pay elsewhere. For a lot of
   customers these are the difference between paying and abandoning, and they
   mostly remove the card form rather than adding to it.
+- **A versioned script URL.** `perch.js` is served from one unversioned path
+  with a short cache. A bad deploy would therefore break every merchant within
+  minutes, with no way to hold one of them on the previous build. Real payment
+  SDKs pin a version into the path for exactly this reason, and it is the change
+  I would make first before anyone I had not met depended on this.
+- **Error reporting.** If this breaks on someone else's site today, nobody finds
+  out. An embed running on hosts you do not control needs to tell you when it
+  fails, and needs to do that without ever carrying card data with it.
+- **Browsers I do not own.** This has been exercised in Chrome, on Windows,
+  against one cooperative host page. A stranger's website means Safari and
+  Firefox, iOS especially, where iframes, keyboards and viewport units are known
+  to misbehave inside payment sheets. It also means hosts with their own modals
+  competing for focus and content policies that may refuse our script. I have no
+  evidence either way there, which for an embeddable product is the gap that
+  matters most.
 - **A browser-level test of the cross-origin flow.** The message contract and the
   state machine are covered by unit tests, but the handshake itself is verified by
   hand. Playwright can drive two origins and would close that gap.
