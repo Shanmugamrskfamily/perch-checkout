@@ -66,20 +66,34 @@ export interface CheckoutHandle {
  *
  * Derived from this script's own `src` rather than configured, so a merchant
  * cannot point the SDK at a different checkout by editing an attribute, and so
- * there is no origin to keep in sync between the tag and the call. Read at load
- * time because `document.currentScript` is only meaningful while the script is
- * evaluating.
+ * there is no origin to keep in sync between the tag and the call.
+ *
+ * `document.currentScript` is only meaningful while the script is evaluating,
+ * so it is read once at load. It is also null whenever the script did not
+ * arrive as a plain tag — bundled by the merchant, injected dynamically, run
+ * from a module — so there is a fallback that finds the tag by its filename.
+ * Between them, every reasonable way of loading this file is covered.
  */
-const CHECKOUT_ORIGIN: string | null = (() => {
-  const current = document.currentScript as HTMLScriptElement | null;
-  const src = current?.src;
+const ORIGIN_AT_LOAD = originOf((document.currentScript as HTMLScriptElement | null)?.src);
+
+function originOf(src: string | undefined): string | null {
   if (!src) return null;
   try {
     return new URL(src, window.location.href).origin;
   } catch {
     return null;
   }
-})();
+}
+
+function checkoutOrigin(): string | null {
+  if (ORIGIN_AT_LOAD) return ORIGIN_AT_LOAD;
+
+  const tags = Array.from(document.querySelectorAll<HTMLScriptElement>("script[src]"));
+  for (const tag of tags) {
+    if (/\/perch\.js(\?|$)/.test(tag.src)) return originOf(tag.src);
+  }
+  return null;
+}
 
 /** At most one checkout at a time, page-wide. See `open()` for why. */
 let active: Session | null = null;
@@ -138,7 +152,8 @@ function open(options: OpenOptions): CheckoutHandle {
     return inertHandle();
   }
 
-  if (!CHECKOUT_ORIGIN) {
+  const origin = checkoutOrigin();
+  if (!origin) {
     return reportStartupFailure(
       options,
       "checkout_unavailable",
@@ -170,7 +185,7 @@ function open(options: OpenOptions): CheckoutHandle {
   }
 
   const session = startSession({
-    checkoutOrigin: CHECKOUT_ORIGIN,
+    checkoutOrigin: origin,
     productId: options.productId,
     theme,
     onSuccess: options.onSuccess,
