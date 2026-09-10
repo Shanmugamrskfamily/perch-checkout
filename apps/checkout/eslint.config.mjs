@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // The embed script is compiled here by `npm run build:sdk`. Linting a
+    // minified bundle only produces noise about its own minifier's output.
+    "public/perch.js",
   ]),
 ]);
 
