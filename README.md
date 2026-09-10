@@ -7,9 +7,14 @@ page, the customer pays without leaving it, and the card details never touch it.
 
 | | |
 |---|---|
-| **Demo store** | _deploy pending — see [Deploying](#deploying)_ |
-| **Checkout** | _deploy pending_ |
+| **Demo store** | https://perch-demo-store-shanmugamrskfamilys-projects.vercel.app |
+| **Checkout** | https://perch-checkout-app-shanmugamrskfamilys-projects.vercel.app |
+| **Embed script** | https://perch-checkout-app-shanmugamrskfamilys-projects.vercel.app/perch.js |
 | **Source** | https://github.com/Shanmugamrskfamily/perch-checkout |
+
+Start at the demo store. The two are separate Vercel projects on separate
+origins, which is the point: if they shared one, the isolation described below
+would be decorative rather than real.
 
 ---
 
@@ -343,12 +348,25 @@ Two Vercel projects from one repository, because the origins must differ.
 
 | Project | Root directory | Environment variable |
 |---|---|---|
-| checkout | `apps/checkout` | `NEXT_PUBLIC_ALLOWED_HOST_ORIGINS` = the demo store's URL |
-| demo | `apps/demo` | `NEXT_PUBLIC_CHECKOUT_ORIGIN` = the checkout's URL |
+| `perch-checkout-app` | `apps/checkout` | `NEXT_PUBLIC_ALLOWED_HOST_ORIGINS` |
+| `perch-demo-store` | `apps/demo` | `NEXT_PUBLIC_CHECKOUT_ORIGIN` |
 
-Each references the other, so deploy both once, set the two variables, then
-redeploy. The checkout's build compiles `perch.js` into its own `public/`
-directory before Next runs, so the script ships from the checkout's origin.
+Both variables are optional here: each app carries the other's production origin
+as a committed default. This repository has exactly one merchant and its address
+is not a secret. A real deployment sets them, and drives the allowlist from the
+domains a merchant registered during onboarding.
+
+The checkout's build compiles `perch.js` into its own `public/` directory before
+Next runs, so the script ships from the checkout's origin.
+
+**Preview deployments will not work, by design.** Vercel gives every preview a
+fresh hostname, which is not on the `frame-ancestors` allowlist, so the checkout
+refuses to render in one. The fix is not a `*.vercel.app` wildcard — that would
+mean trusting every account on Vercel. Use the production URLs above.
+
+Deployment protection is off on both projects. A checkout behind an SSO redirect
+cannot be embedded by anything, and the redirect adds `X-Frame-Options: DENY` of
+its own.
 
 ---
 
