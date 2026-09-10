@@ -16,9 +16,20 @@
  *    which is how real payment SDKs are distributed.
  */
 
-import { build, context } from "esbuild";
+import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
+
+/**
+ * esbuild is resolved from wherever this was invoked, not from this file.
+ *
+ * A plain `import "esbuild"` resolves relative to this script's own directory,
+ * which is fine locally where everything hoists to one root, and wrong on a
+ * hosted build that installs only the workspace it is deploying. The tool
+ * belongs to whoever asked for the build, so that is where we look for it.
+ */
+const requireFrom = createRequire(join(process.cwd(), "package.json"));
+const { build, context } = requireFrom("esbuild");
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, "..", "..");

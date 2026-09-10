@@ -37,8 +37,20 @@ declare global {
   }
 }
 
-/** Where the checkout is served from. Same origin that serves `perch.js`. */
+/** The deployed checkout. Overridden by the environment variable when set. */
+const HOSTED_CHECKOUT = "https://perch-checkout-app-shanmugamrskfamilys-projects.vercel.app";
+
+/**
+ * Where the checkout is served from. The same origin serves `perch.js`.
+ *
+ * The fallback keys off `NODE_ENV` rather than inspecting `window.location`,
+ * because it is inlined at build time and so resolves to the same string on the
+ * server and in the browser. Deciding this from the hostname at runtime would
+ * render one value during server rendering and a different one on hydration,
+ * which React would rightly complain about.
+ */
 export const CHECKOUT_ORIGIN =
-  process.env.NEXT_PUBLIC_CHECKOUT_ORIGIN ?? "http://localhost:3001";
+  process.env.NEXT_PUBLIC_CHECKOUT_ORIGIN ??
+  (process.env.NODE_ENV === "production" ? HOSTED_CHECKOUT : "http://localhost:3001");
 
 export const PERCH_SCRIPT_URL = `${CHECKOUT_ORIGIN}/perch.js`;

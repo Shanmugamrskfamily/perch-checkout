@@ -11,7 +11,23 @@
  * of the check is the part worth showing.
  */
 
-const DEFAULT_ORIGINS = ["http://localhost:3000"];
+/**
+ * The demo store, locally and deployed.
+ *
+ * Committed rather than configured because this repository has exactly one
+ * merchant and its address is not a secret. `NEXT_PUBLIC_ALLOWED_HOST_ORIGINS`
+ * still overrides it, which is how a real deployment would drive this — from a
+ * per-merchant list of the domains registered during onboarding.
+ *
+ * Note what is deliberately absent: a wildcard for Vercel preview URLs. Preview
+ * deployments get a fresh hostname each time and would need one, and a checkout
+ * that trusts `*.vercel.app` trusts every account on Vercel. Previews being
+ * refused is the allowlist working, not failing.
+ */
+const DEFAULT_ORIGINS = [
+  "http://localhost:3000",
+  "https://perch-demo-store-shanmugamrskfamilys-projects.vercel.app",
+];
 
 function parse(raw: string | undefined): string[] {
   if (!raw) return DEFAULT_ORIGINS;
