@@ -159,6 +159,36 @@ iframe {
   outline: 2px solid #0c0f12;
   outline-offset: 2px;
 }
+
+/**
+ * Phones get a sheet, not a card.
+ *
+ * A centred card with margin all round is a desktop shape. On a narrow screen
+ * it wastes the width, and its controls end up in the middle of the display,
+ * far from the thumb actually holding the phone. Anchoring to the bottom edge
+ * puts the Pay button where the hand already is, and it is the shape people
+ * have learned to expect from every payment sheet their operating system shows
+ * them.
+ *
+ * The breakpoint is on the viewport, not the device: a small window on a
+ * desktop has the same problem and gets the same answer.
+ */
+@media (max-width: 540px) {
+  .root {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .panel {
+    max-width: none;
+    margin: 0;
+    /* Square at the bottom, because that edge is against the screen. */
+    border-radius: 16px 16px 0 0;
+    /* Never taller than the screen. A longer form scrolls inside the overlay
+       root rather than pushing its own buttons out of reach. */
+    max-height: 94dvh;
+  }
+}
 `;
 
 /** True when the customer has asked their system for less movement. */

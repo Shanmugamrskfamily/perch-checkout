@@ -19,26 +19,34 @@ export interface Product {
   readonly merchant: string;
 }
 
+/**
+ * Prices are in paise, and the shop is in Bengaluru.
+ *
+ * That is the interesting case rather than a convenient one: an Indian business
+ * selling to customers anywhere is precisely what a Merchant of Record exists
+ * to make possible. The charge is in rupees wherever the customer happens to
+ * be, and the tax owed is decided by where they are, not where the shop is.
+ */
 const CATALOG: Readonly<Record<string, Product>> = {
   prod_notebook: {
     id: "prod_notebook",
     name: "Field Notebook",
     summary: "Ninety-six pages, dot grid, sewn binding",
-    price: { amount: 1800, currency: "GBP" },
+    price: { amount: 145000, currency: "INR" },
     merchant: "Kestrel Supply Co.",
   },
   prod_pen: {
     id: "prod_pen",
     name: "Machined Pen",
     summary: "Solid brass, refillable, ages beautifully",
-    price: { amount: 4200, currency: "GBP" },
+    price: { amount: 340000, currency: "INR" },
     merchant: "Kestrel Supply Co.",
   },
   prod_bundle: {
     id: "prod_bundle",
     name: "Desk Set",
     summary: "Notebook and pen together, in a card sleeve",
-    price: { amount: 5400, currency: "GBP" },
+    price: { amount: 450000, currency: "INR" },
     merchant: "Kestrel Supply Co.",
   },
 };

@@ -23,13 +23,18 @@ export function CardBrandMark({ brand }: { brand: CardBrand }) {
     );
   }
 
+  const wordmark =
+    brand === "visa" ? "Visa" : brand === "amex" ? "Amex" : "RuPay";
+  const full =
+    brand === "visa" ? "Visa" : brand === "amex" ? "American Express" : "RuPay";
+
   return (
     <span
-      aria-label={brand === "visa" ? "Visa" : "American Express"}
+      aria-label={full}
       role="img"
       className="select-none text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-soft"
     >
-      {brand === "visa" ? "Visa" : "Amex"}
+      {wordmark}
     </span>
   );
 }

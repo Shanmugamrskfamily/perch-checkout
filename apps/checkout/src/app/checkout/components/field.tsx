@@ -15,7 +15,12 @@
  * digits on a phone.
  */
 
-import { useId, type InputHTMLAttributes, type ReactNode } from "react";
+import {
+  useId,
+  type InputHTMLAttributes,
+  type ReactNode,
+  type SelectHTMLAttributes,
+} from "react";
 
 export interface FieldProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, "id" | "className"> {
@@ -57,6 +62,75 @@ export function Field({ label, problem, adornment, ...input }: FieldProps) {
             {adornment}
           </span>
         ) : null}
+      </div>
+
+      {problem ? (
+        <p id={problemId} role="alert" className="text-[12.5px] leading-snug text-critical">
+          {problem}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+export interface SelectFieldProps
+  extends Omit<SelectHTMLAttributes<HTMLSelectElement>, "id" | "className"> {
+  readonly label: string;
+  readonly problem?: string | undefined;
+  readonly children: ReactNode;
+}
+
+/**
+ * A native `<select>`, on purpose.
+ *
+ * A custom dropdown would match the rest of the form more exactly and would be
+ * worse. The native control is searchable by typing, works with every screen
+ * reader without help, and on a phone becomes the platform's own picker, which
+ * is far easier to use one-handed than any list we could build. On the one
+ * screen where the customer must not get stuck, the boring control wins.
+ */
+export function SelectField({ label, problem, children, ...select }: SelectFieldProps) {
+  const id = useId();
+  const problemId = `${id}-problem`;
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-[13px] font-medium text-ink-soft">
+        {label}
+      </label>
+
+      <div className="relative">
+        <select
+          {...select}
+          id={id}
+          aria-invalid={problem ? true : undefined}
+          aria-describedby={problem ? problemId : undefined}
+          className={[
+            "w-full appearance-none rounded-[10px] border bg-surface px-3 py-2.5 pr-9",
+            "text-[15px] text-ink",
+            "transition-[border-color] duration-150",
+            "disabled:cursor-not-allowed disabled:bg-sunken disabled:text-ink-faint",
+            problem ? "border-critical" : "border-line hover:border-line-strong",
+          ].join(" ")}
+        >
+          {children}
+        </select>
+        <svg
+          aria-hidden="true"
+          width="10"
+          height="6"
+          viewBox="0 0 10 6"
+          className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2"
+        >
+          <path
+            d="M1 1l4 4 4-4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            className="text-ink-faint"
+          />
+        </svg>
       </div>
 
       {problem ? (

@@ -24,8 +24,9 @@ import {
   formatCardNumber,
   formatExpiry,
 } from "@/lib/card";
+import { REGIONS, findRegion, priceWithTax } from "@/lib/regions";
 import { initialState, reduce, visibleProblems } from "@/lib/payment-machine";
-import { Field } from "./components/field";
+import { Field, SelectField } from "./components/field";
 import { CardBrandMark } from "./components/card-brand";
 import { OrderSummary } from "./components/order-summary";
 import { PayButton } from "./components/pay-button";
@@ -73,6 +74,18 @@ export function CheckoutScreen() {
 
   const paying = phase.status === "paying";
 
+  /**
+   * What the customer actually owes.
+   *
+   * Null until they have chosen a country, because until then we genuinely do
+   * not know: as a Merchant of Record the tax is decided by where they are, not
+   * where the shop is. Showing a total before that would mean showing one we
+   * might have to change.
+   */
+  const region = findRegion(form.country);
+  const taxed = product && region ? priceWithTax(product.price, region) : null;
+  const amountDue = taxed?.total ?? product?.price ?? null;
+
   useEffect(() => {
     if (!paying || !product) return;
     let live = true;
@@ -87,7 +100,10 @@ export function CheckoutScreen() {
       idempotencyKey,
       cardNumber: form.number,
       email: form.email,
-      amount: product.price,
+      /* The amount that goes to the gateway is the one with tax on it, which is
+         also the one printed on the button the customer pressed. Those two
+         must never be computed in different places. */
+      amount: amountDue ?? product.price,
     })
       .then((result) => {
         if (!live) return;
@@ -116,7 +132,7 @@ export function CheckoutScreen() {
     return () => {
       live = false;
     };
-  }, [paying, product, idempotencyKey, form.number, form.email]);
+  }, [paying, product, idempotencyKey, form.number, form.email, amountDue]);
 
   // -- tell the host about outcomes -----------------------------------------
 
@@ -196,7 +212,7 @@ export function CheckoutScreen() {
         />
       ) : phase.status === "paid" && product ? (
         <Receipt
-          amount={product.price}
+          amount={amountDue ?? product.price}
           last4={phase.last4}
           email={form.email}
           sessionId={phase.sessionId}
@@ -204,9 +220,13 @@ export function CheckoutScreen() {
         />
       ) : product ? (
         <>
-          <OrderSummary product={product} />
+          <OrderSummary product={product} charge={taxed} />
 
-          <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4 px-6 py-5">
+          <form
+            onSubmit={onSubmit}
+            noValidate
+            className="flex flex-col gap-4 px-5 py-5 sm:px-6"
+          >
             {phase.status === "declined" ? (
               <StatusNote tone="critical" title="That card was declined">
                 {phase.message} Your details are still here, so you can try another card.
@@ -232,6 +252,28 @@ export function CheckoutScreen() {
               onChange={(e) => dispatch({ type: "fieldChanged", field: "email", value: e.target.value })}
               onBlur={() => dispatch({ type: "fieldBlurred", field: "email" })}
             />
+
+            {/* Above the card fields on purpose: choosing it changes the total,
+                and nobody should type a card number against a figure that is
+                about to move. */}
+            <SelectField
+              label="Where are you?"
+              autoComplete="country"
+              value={form.country}
+              disabled={busy}
+              problem={problems.country}
+              onChange={(e) =>
+                dispatch({ type: "fieldChanged", field: "country", value: e.target.value })
+              }
+              onBlur={() => dispatch({ type: "fieldBlurred", field: "country" })}
+            >
+              <option value="">Choose a country</option>
+              {REGIONS.map((r) => (
+                <option key={r.code} value={r.code}>
+                  {r.name}
+                </option>
+              ))}
+            </SelectField>
 
             <Field
               label="Card number"
@@ -293,9 +335,14 @@ export function CheckoutScreen() {
             <PayButton
               busy={busy}
               label={
-                phase.status === "declined" || phase.status === "disconnected"
-                  ? `Try again — ${formatMoney(product.price)}`
-                  : `Pay ${formatMoney(product.price)}`
+                /* Before a country is chosen there is no final amount, so the
+                   button says what it can honestly say rather than quoting a
+                   figure that is about to change. */
+                amountDue === null || !taxed
+                  ? "Continue"
+                  : phase.status === "declined" || phase.status === "disconnected"
+                    ? `Try again — ${formatMoney(amountDue)}`
+                    : `Pay ${formatMoney(amountDue)}`
               }
             />
 

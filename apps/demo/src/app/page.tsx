@@ -68,7 +68,7 @@ export default function StorePage() {
 
       <header className="flex items-baseline justify-between border-b border-line pb-5">
         <span className="text-[15px] font-semibold tracking-tight">Kestrel Supply Co.</span>
-        <span className="text-[12px] text-ink-faint">Est. 1974 · Sheffield</span>
+        <span className="text-[12px] text-ink-faint">Bengaluru · ships worldwide</span>
       </header>
 
       <div className="grid gap-10 md:grid-cols-[1.1fr_1fr] md:gap-14">
@@ -83,7 +83,10 @@ export default function StorePage() {
               Ninety-six pages of dot grid on heavy cream paper, sewn so it opens flat and stays
               that way. Made a mile from where we pack it.
             </p>
-            <p className="mt-1 text-[20px] font-semibold tabular-nums">£18.00</p>
+            <p className="mt-1 text-[20px] font-semibold tabular-nums">₹1,450.00</p>
+            <p className="text-[12.5px] text-ink-faint">
+              Tax added at checkout, based on where you are.
+            </p>
           </div>
 
           <button

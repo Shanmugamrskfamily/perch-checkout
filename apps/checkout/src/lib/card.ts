@@ -11,13 +11,14 @@
  * the code holding card numbers to have no logging in it at all.
  */
 
-export type CardBrand = "visa" | "mastercard" | "amex" | "unknown";
+export type CardBrand = "visa" | "mastercard" | "amex" | "rupay" | "unknown";
 
 /** Where the spaces go, per brand. Amex is famously 4-6-5, not 4-4-4-4. */
 const GROUPS: Record<CardBrand, readonly number[]> = {
   amex: [4, 6, 5],
   visa: [4, 4, 4, 4],
   mastercard: [4, 4, 4, 4],
+  rupay: [4, 4, 4, 4],
   unknown: [4, 4, 4, 4],
 };
 
@@ -25,6 +26,7 @@ const MAX_DIGITS: Record<CardBrand, number> = {
   amex: 15,
   visa: 16,
   mastercard: 16,
+  rupay: 16,
   unknown: 19,
 };
 
@@ -44,6 +46,10 @@ export function detectBrand(value: string): CardBrand {
   if (/^4/.test(digits)) return "visa";
   if (/^3[47]/.test(digits)) return "amex";
   if (/^5[1-5]/.test(digits) || /^2[2-7]/.test(digits)) return "mastercard";
+  /* RuPay. Worth recognising rather than falling through to "unknown": it is
+     the domestic network in India, where this shop is, and a customer whose
+     card the form does not appear to recognise is a customer who hesitates. */
+  if (/^(60|65[2-9]|81|82|508)/.test(digits)) return "rupay";
   return "unknown";
 }
 
@@ -150,16 +156,24 @@ export function isPlausibleEmail(value: string): boolean {
   return EMAIL.test(value.trim());
 }
 
-export type FieldName = "email" | "number" | "expiry" | "cvc";
+export type FieldName = "email" | "country" | "number" | "expiry" | "cvc";
 
 export interface CardForm {
   readonly email: string;
+  /** ISO 3166-1 alpha-2. Decides the tax, so it is collected before the card. */
+  readonly country: string;
   readonly number: string;
   readonly expiry: string;
   readonly cvc: string;
 }
 
-export const EMPTY_FORM: CardForm = { email: "", number: "", expiry: "", cvc: "" };
+export const EMPTY_FORM: CardForm = {
+  email: "",
+  country: "",
+  number: "",
+  expiry: "",
+  cvc: "",
+};
 
 /**
  * Validates the whole form and returns per-field messages.
@@ -175,6 +189,10 @@ export function validate(form: CardForm, now: Date = new Date()): Partial<Record
     problems.email = "We need an email to send your receipt to.";
   } else if (!isPlausibleEmail(form.email)) {
     problems.email = "That does not look like an email address.";
+  }
+
+  if (form.country.trim().length === 0) {
+    problems.country = "Choose where you are, so we can work out the tax.";
   }
 
   const brand = detectBrand(form.number);

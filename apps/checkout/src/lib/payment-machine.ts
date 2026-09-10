@@ -77,6 +77,7 @@ export type Event =
 
 const NO_TOUCHES: Record<FieldName, boolean> = {
   email: false,
+  country: false,
   number: false,
   expiry: false,
   cvc: false,
