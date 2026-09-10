@@ -10,6 +10,11 @@ build/
 out/
 *.tsbuildinfo
 
+# The embed script is compiled into the checkout app's static directory by
+# `npm run build:sdk`. Generated, never edited by hand, never committed.
+apps/checkout/public/perch.js
+apps/checkout/public/perch.js.map
+
 # test output
 coverage/
 
