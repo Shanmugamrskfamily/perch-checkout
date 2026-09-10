@@ -75,12 +75,29 @@ export interface CheckoutTheme {
 // Messages
 // ---------------------------------------------------------------------------
 
+/**
+ * Which end of the checkout's tab order to move focus to.
+ *
+ * `first` when the customer tabbed forward off the end of the form, `last`
+ * when they shift-tabbed backwards off the start.
+ */
+export type FocusEdge = "first" | "last";
+
 /** Sent by the embed script on the merchant's page, into the iframe. */
 export type HostMessage =
   /** Answers the frame's `ready`. Carries everything the checkout needs to start. */
   | { readonly type: "init"; readonly productId: string; readonly theme: CheckoutTheme | null }
   /** The merchant called `close()`, or the customer hit escape outside the frame. */
-  | { readonly type: "requestClose" };
+  | { readonly type: "requestClose" }
+  /**
+   * Focus has tabbed out of the checkout; put it back.
+   *
+   * A modal normally traps focus by keeping it inside one document. Here the
+   * modal *is* a different document, and neither side can see or move focus in
+   * the other, so the trap has to be a conversation: the host notices focus
+   * leaving and asks the frame to take it back.
+   */
+  | { readonly type: "focus"; readonly edge: FocusEdge };
 
 /** Sent by the checkout, out of the iframe, to the merchant's page. */
 export type FrameMessage =

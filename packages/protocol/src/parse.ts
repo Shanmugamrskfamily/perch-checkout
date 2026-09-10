@@ -44,6 +44,7 @@ const PRODUCT_ID = /^prod_[A-Za-z0-9_-]{1,64}$/;
 const HEX_COLOUR = /^#[0-9a-fA-F]{6}$/;
 
 const RADIUS_VALUES = ["sharp", "soft", "round"] as const;
+const FOCUS_EDGES = ["first", "last"] as const;
 const CLOSE_REASONS = ["completed", "dismissed", "expired", "host", "error"] as const;
 const ERROR_CODES = [
   "unknown_product",
@@ -142,6 +143,13 @@ export function parseHostMessage(data: unknown, channel: string): HostMessage | 
     }
     case "requestClose":
       return { type: "requestClose" };
+
+    case "focus": {
+      const edge = message["edge"];
+      if (!isOneOf(edge, FOCUS_EDGES)) return null;
+      return { type: "focus", edge };
+    }
+
     default:
       return null;
   }

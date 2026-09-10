@@ -35,6 +35,8 @@
  * on a timer, and the fade is only decoration over the top of that.
  */
 
+import type { FocusEdge } from "@perch/protocol";
+
 /** How long to wait for the checkout to say `ready` before giving up on it. */
 export const READY_TIMEOUT_MS = 12_000;
 
@@ -47,6 +49,14 @@ export interface OverlayOptions {
   readonly src: string;
   /** Called when the customer dismisses the overlay from the host side. */
   readonly onDismiss: () => void;
+  /**
+   * Called when keyboard focus has tabbed out of the checkout.
+   *
+   * `first` means they went forward off the end, `last` that they went
+   * backwards off the start. The session turns this into a message asking the
+   * frame to take focus back.
+   */
+  readonly onFocusEscape: (edge: FocusEdge) => void;
 }
 
 export interface Overlay {
@@ -113,6 +123,16 @@ iframe {
   align-items: center;
   justify-content: center;
   background: #ffffff;
+}
+
+/* Focusable, and invisible. Not display:none or visibility:hidden, because
+   neither of those can receive focus, which is the entire job. */
+.sentinel {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .spinner {
@@ -236,6 +256,12 @@ export function createOverlay(options: OverlayOptions): Overlay {
   const panel = doc.createElement("div");
   panel.className = "panel";
   panel.style.height = "560px";
+  /* Dialog semantics on the panel, not the iframe. The iframe carries a title
+     for the frame itself; this is what tells assistive technology that the page
+     behind is out of scope while the checkout is open. */
+  panel.setAttribute("role", "dialog");
+  panel.setAttribute("aria-modal", "true");
+  panel.setAttribute("aria-label", "Secure checkout");
 
   const iframe = doc.createElement("iframe");
   iframe.src = options.src;
@@ -256,7 +282,31 @@ export function createOverlay(options: OverlayOptions): Overlay {
   spinner.setAttribute("aria-label", "Loading checkout");
   loading.appendChild(spinner);
 
-  panel.append(iframe, loading);
+  /**
+   * The two halves of the focus trap.
+   *
+   * A modal normally traps focus by watching it inside a single document. This
+   * modal is a different document, so the host cannot see focus move inside the
+   * frame and the frame cannot see it leave. What the host *can* see is focus
+   * arriving on a sentinel placed either side of the iframe, which only happens
+   * when the customer has tabbed off one end of the checkout. That is the
+   * signal, and the frame is then asked to take focus back at the other end.
+   *
+   * Without this, Tab from the last field lands on the merchant's page behind
+   * the overlay, which is the classic broken-modal bug.
+   */
+  const sentinelBefore = doc.createElement("div");
+  sentinelBefore.className = "sentinel";
+  sentinelBefore.tabIndex = 0;
+  sentinelBefore.setAttribute("aria-hidden", "true");
+
+  const sentinelAfter = sentinelBefore.cloneNode() as HTMLDivElement;
+
+  /* Tabbing backwards past the start should wrap to the end, and vice versa. */
+  sentinelBefore.addEventListener("focus", () => options.onFocusEscape("last"));
+  sentinelAfter.addEventListener("focus", () => options.onFocusEscape("first"));
+
+  panel.append(sentinelBefore, iframe, loading, sentinelAfter);
   root.append(backdrop, panel);
   shadow.append(style, root);
 
@@ -295,6 +345,28 @@ export function createOverlay(options: OverlayOptions): Overlay {
 
   body.appendChild(mount);
 
+  /**
+   * Everything else on the page is switched off while the checkout is open.
+   *
+   * `inert` does in one attribute what a pile of `aria-hidden` and click
+   * blocking does badly: the content behind stops being focusable, stops
+   * receiving clicks, and disappears from the accessibility tree, so a screen
+   * reader cannot wander into the merchant's page while a card is being typed.
+   *
+   * It complements the sentinels rather than replacing them. `inert` stops
+   * focus landing behind the overlay; the sentinels are what send it back into
+   * the frame instead of out to the browser's own chrome.
+   *
+   * Only elements we actually changed are recorded, so a merchant who had their
+   * own inert content still has it when the checkout closes.
+   */
+  const inerted: Element[] = [];
+  for (const sibling of Array.from(body.children)) {
+    if (sibling === mount || sibling.hasAttribute("inert")) continue;
+    sibling.setAttribute("inert", "");
+    inerted.push(sibling);
+  }
+
   decorate(backdrop, [{ opacity: 0 }, { opacity: 1 }], ENTER_MS);
   decorate(
     panel,
@@ -323,9 +395,10 @@ export function createOverlay(options: OverlayOptions): Overlay {
       decorate(cover, [{ opacity: 1 }, { opacity: 0 }], REVEAL_MS);
       window.setTimeout(() => cover.remove(), prefersReducedMotion() ? 0 : REVEAL_MS);
 
-      /* Move focus into the checkout. From here the browser's own focus
-         handling keeps the customer inside the frame, because focus cannot
-         escape a cross-origin document by keyboard. */
+      /* Move focus into the checkout. Keeping it there is the sentinels' job:
+         focus is perfectly capable of tabbing out of a cross-origin frame and
+         landing on the page behind, and nothing about the origin boundary
+         prevents it. */
       iframe.focus();
     },
 
@@ -368,6 +441,8 @@ export function createOverlay(options: OverlayOptions): Overlay {
 
       backdrop.removeEventListener("click", dismissOnce);
       doc.removeEventListener("keydown", onKeyDown, true);
+
+      for (const sibling of inerted) sibling.removeAttribute("inert");
 
       body.style.overflow = previousOverflow;
       body.style.paddingRight = previousPaddingRight;

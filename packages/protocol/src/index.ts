@@ -6,6 +6,7 @@ export {
   type CloseReason,
   type Envelope,
   type ErrorCode,
+  type FocusEdge,
   type FrameMessage,
   type HostMessage,
 } from "./messages";

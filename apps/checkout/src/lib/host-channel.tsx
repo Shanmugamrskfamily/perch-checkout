@@ -153,6 +153,11 @@ export function HostChannelProvider({
 
       if (message.type === "requestClose") {
         handleCloseRequest();
+        return;
+      }
+
+      if (message.type === "focus") {
+        moveFocusToEdge(message.edge);
       }
     };
 
@@ -295,6 +300,39 @@ export function assessEmbedding(facts: EmbeddingFacts): HostLink {
   if (referrerOrigin && referrerOrigin !== safeOrigin(facts.claimedOrigin)) return refused;
 
   return { status: "waiting" };
+}
+
+/**
+ * Everything a keyboard can reach, in document order.
+ *
+ * Deliberately a plain query rather than a library. The checkout is a short
+ * form of our own making, so the exotic cases a general-purpose focus library
+ * exists to handle — nested shadow roots, `contenteditable`, elements hidden by
+ * a parent's overflow — cannot arise here. Hidden elements are filtered by
+ * `offsetParent`, which is the cheap check that catches the ones that can.
+ */
+const FOCUSABLE = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  '[tabindex]:not([tabindex="-1"])',
+].join(",");
+
+/**
+ * Takes focus back at one end of the form.
+ *
+ * The other half of the trap. The host cannot move focus inside this document,
+ * so it asks, and this is the answer.
+ */
+function moveFocusToEdge(edge: "first" | "last"): void {
+  const candidates = Array.from(
+    document.querySelectorAll<HTMLElement>(FOCUSABLE),
+  ).filter((element) => element.offsetParent !== null);
+
+  const target = edge === "first" ? candidates[0] : candidates[candidates.length - 1];
+  target?.focus();
 }
 
 function safeOrigin(value: string | undefined | null): string | null {
