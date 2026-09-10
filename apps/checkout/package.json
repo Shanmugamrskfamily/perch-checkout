@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "@perch/sdk": "*",
+    "@types/jest": "^29.5.14",
     "esbuild": "^0.24.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",

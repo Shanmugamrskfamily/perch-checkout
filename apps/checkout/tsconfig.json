@@ -30,5 +30,6 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules"],
+  "//": "Test files stay in `include` on purpose: they are part of the type-checked surface, and a test that does not compile is a test that is not testing anything. That is why @types/jest is a dependency of this app rather than of the repository root, so a build that installs only this workspace still has it."
 }
