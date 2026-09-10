@@ -186,15 +186,40 @@ export function HostChannelProvider({
   /* Report the document's natural height so the host can size the iframe to the
      content. Measured rather than guessed, because the checkout's height
      changes as errors appear and receipts replace forms. */
+  /**
+   * Keeps the host's iframe the same height as this document.
+   *
+   * Measured from `body`, not `documentElement`: the root element is at least
+   * as tall as the viewport, so measuring it would report the iframe's own
+   * current height straight back and the panel could only ever grow.
+   *
+   * Two triggers, and the split matters. The render pass is the primary one,
+   * because every height change we cause ourselves — a decline banner
+   * appearing, the form giving way to a receipt — happens on a render, and a
+   * measurement taken there always arrives. `ResizeObserver` is the supplement,
+   * for the changes React knows nothing about, such as a webfont landing and
+   * reflowing the text. Relying on the observer alone means that if it never
+   * fires, the panel keeps its opening guess forever.
+   */
+  const lastHeightRef = useRef(0);
+
+  const publishHeight = useCallback(() => {
+    const height = Math.ceil(document.body.getBoundingClientRect().height);
+    if (height < 1) return;
+    /* Sub-pixel churn would otherwise post a message on every render. */
+    if (Math.abs(height - lastHeightRef.current) < 2) return;
+    lastHeightRef.current = height;
+    send({ type: "resize", height });
+  }, [send]);
+
+  useEffect(publishHeight);
+
   useEffect(() => {
     if (typeof window === "undefined" || !("ResizeObserver" in window)) return;
-    const target = document.documentElement;
-    const observer = new ResizeObserver(() => {
-      send({ type: "resize", height: Math.ceil(target.getBoundingClientRect().height) });
-    });
-    observer.observe(target);
+    const observer = new ResizeObserver(publishHeight);
+    observer.observe(document.body);
     return () => observer.disconnect();
-  }, [send]);
+  }, [publishHeight]);
 
   const value = useMemo<HostChannel>(
     () => ({

@@ -1,26 +1,42 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/**
+ * Kestrel Supply Co. — the pretend shop.
+ *
+ * Its palette is intentionally nothing like the checkout's. If the two matched,
+ * the demo would prove nothing: the point is that a payment surface keeps its
+ * own identity on any site that embeds it, so a customer recognises it wherever
+ * they meet it. A warm paper ground here, cool neutral in the checkout.
+ */
+@theme {
+  --color-ink: #1a1712;
+  --color-ink-soft: #6a6257;
+  --color-ink-faint: #9a9285;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-paper: #faf7f2;
+  --color-card: #ffffff;
+  --color-line: #e8e2d8;
+
+  --color-brand: #7a3e12;
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
