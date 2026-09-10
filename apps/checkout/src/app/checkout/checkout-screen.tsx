@@ -8,7 +8,14 @@
  * changes to the markup and can be tested without a browser.
  */
 
-import { useCallback, useEffect, useReducer, type CSSProperties, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useReducer,
+  useState,
+  type CSSProperties,
+  type FormEvent,
+} from "react";
 import { useHostChannel } from "@/lib/host-channel";
 import { fetchProduct, UnknownProductError } from "@/lib/catalog";
 import { formatMoney } from "@/lib/money";
@@ -25,7 +32,13 @@ import {
   formatExpiry,
 } from "@/lib/card";
 import { REGIONS, findRegion, priceWithTax } from "@/lib/regions";
-import { initialState, reduce, visibleProblems } from "@/lib/payment-machine";
+import {
+  COUNTDOWN_VISIBLE_MS,
+  initialState,
+  isTerminal,
+  reduce,
+  visibleProblems,
+} from "@/lib/payment-machine";
 import { Field, SelectField } from "./components/field";
 import { CardBrandMark } from "./components/card-brand";
 import { OrderSummary } from "./components/order-summary";
@@ -134,6 +147,36 @@ export function CheckoutScreen() {
     };
   }, [paying, product, idempotencyKey, form.number, form.email, amountDue]);
 
+  // -- the session clock -----------------------------------------------------
+
+  const [now, setNow] = useState(() => Date.now());
+  const { expiresAt } = state;
+
+  useEffect(() => {
+    if (expiresAt === null || isTerminal(phase)) return;
+
+    /* The dispatch happens in the timer callback rather than in the effect
+       body. The effect subscribes to a clock; it does not itself decide that
+       time has passed. */
+    const id = window.setInterval(() => {
+      if (Date.now() >= expiresAt) dispatch({ type: "sessionExpired" });
+      else setNow(Date.now());
+    }, 1000);
+
+    return () => window.clearInterval(id);
+  }, [expiresAt, phase]);
+
+  const remaining = expiresAt === null ? null : Math.max(0, expiresAt - now);
+
+  /* Silent until the end is close. A timer counting down from three minutes
+     while somebody types their card number is pressure, not information. It
+     also stays hidden mid-charge, where there is nothing they could do about
+     it anyway. */
+  const countdown =
+    remaining !== null && remaining <= COUNTDOWN_VISIBLE_MS && !isTerminal(phase) && !paying
+      ? remaining
+      : null;
+
   // -- tell the host about outcomes -----------------------------------------
 
   useEffect(() => {
@@ -142,6 +185,12 @@ export function CheckoutScreen() {
 
   useEffect(() => {
     if (phase.status === "unavailable") reportFailure("unknown_product", phase.message);
+  }, [phase, reportFailure]);
+
+  useEffect(() => {
+    if (phase.status === "expired") {
+      reportFailure("session_expired", "The checkout timed out before the payment was made.");
+    }
   }, [phase, reportFailure]);
 
   // -- closing ---------------------------------------------------------------
@@ -346,6 +395,18 @@ export function CheckoutScreen() {
               }
             />
 
+            {countdown !== null ? (
+              <p
+                /* Polite: it updates every second, and an assertive region
+                   would interrupt a screen reader user once per second, which
+                   is a special kind of cruelty on a payment form. */
+                aria-live="polite"
+                className="text-center text-[12px] text-caution"
+              >
+                This checkout expires in {formatCountdown(countdown)}.
+              </p>
+            ) : null}
+
             <p className="text-center text-[11.5px] leading-relaxed text-ink-faint">
               Your card details are entered on Perch, not on {product.merchant}.
             </p>
@@ -390,6 +451,15 @@ function ExitConfirm({ onStay }: { onStay: () => void }) {
       </div>
     </div>
   );
+}
+
+/** Seconds only under a minute, minutes and seconds above it. */
+function formatCountdown(ms: number): string {
+  const total = Math.ceil(ms / 1000);
+  if (total < 60) return `${total} second${total === 1 ? "" : "s"}`;
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
 /** The brief moment between the frame appearing and the order arriving. */

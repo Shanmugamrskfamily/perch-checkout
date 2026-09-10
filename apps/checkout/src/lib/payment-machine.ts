@@ -46,9 +46,27 @@ export type Phase =
   /** The session outlived its window before payment completed. */
   | { readonly status: "expired" };
 
+/**
+ * How long a checkout stays open before it gives up.
+ *
+ * A payment session left open indefinitely is a small risk that accumulates:
+ * an abandoned tab on a shared machine, a price that has since changed, a
+ * product that has since sold out. Real gateways bound it for the same reasons.
+ *
+ * Three minutes is short for a production window and is chosen so the state is
+ * actually reachable by someone reviewing this. A real deployment would measure
+ * how long people take and set it well above the slowest of them.
+ */
+export const SESSION_WINDOW_MS = 3 * 60_000;
+
+/** When the countdown becomes visible. Silent before that. */
+export const COUNTDOWN_VISIBLE_MS = 45_000;
+
 export interface State {
   readonly phase: Phase;
   readonly product: Product | null;
+  /** Epoch milliseconds. Null until the order has actually loaded. */
+  readonly expiresAt: number | null;
   readonly form: CardForm;
   /** Fields the customer has finished with, so errors appear on leaving a field. */
   readonly touched: Readonly<Record<FieldName, boolean>>;
@@ -87,6 +105,7 @@ export function initialState(): State {
   return {
     phase: { status: "loading" },
     product: null,
+    expiresAt: null,
     form: EMPTY_FORM,
     touched: NO_TOUCHES,
     problems: {},
@@ -127,7 +146,14 @@ export function reduceAt(state: State, event: Event, now: Date): State {
   switch (event.type) {
     case "productLoaded":
       if (state.phase.status !== "loading") return state;
-      return { ...state, product: event.product, phase: { status: "ready" } };
+      /* The clock starts when there is something to buy, not when the frame
+         mounted. A slow product fetch should not eat the customer's time. */
+      return {
+        ...state,
+        product: event.product,
+        expiresAt: now.getTime() + SESSION_WINDOW_MS,
+        phase: { status: "ready" },
+      };
 
     case "productFailed":
       if (state.phase.status !== "loading") return state;
