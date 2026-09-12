@@ -8,6 +8,7 @@ page, the customer pays without leaving it, and the card details never touch it.
 | | |
 |---|---|
 | **Demo store** | https://perch-demo-store.vercel.app |
+| **Walkthrough** | https://youtu.be/un4rL3P8WC0 · two minutes |
 | **Checkout** | https://perch-checkout-app.vercel.app |
 | **Embed script** | https://perch-checkout-app.vercel.app/perch.js |
 | **Source** | https://github.com/Shanmugamrskfamily/perch-checkout |
