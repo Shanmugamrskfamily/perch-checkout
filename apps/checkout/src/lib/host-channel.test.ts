@@ -7,9 +7,17 @@
  */
 
 import { assessEmbedding } from "./host-channel";
-import { isAllowedHostOrigin } from "./config";
+import { ALLOWED_HOST_ORIGINS, isAllowedHostOrigin } from "./config";
 
-const ALLOWED = "http://localhost:3000";
+/**
+ * A real entry from the shipped allowlist.
+ *
+ * Deliberately not localhost. Jest runs with `NODE_ENV=test`, so the defaults
+ * in play are the production ones, and a fixture that assumed localhost was
+ * trusted would quietly stop testing the thing it claims to test the moment
+ * that assumption changed. It already did once.
+ */
+const ALLOWED = "https://perch-demo-store.vercel.app";
 
 const framed = {
   isFramed: true,
@@ -20,17 +28,26 @@ const framed = {
 
 describe("origin allowlist", () => {
   it("accepts an exact origin however it is written", () => {
-    expect(isAllowedHostOrigin("http://localhost:3000", [ALLOWED])).toBe(true);
-    expect(isAllowedHostOrigin("http://localhost:3000/", [ALLOWED])).toBe(true);
-    expect(isAllowedHostOrigin("http://localhost:3000/checkout?x=1", [ALLOWED])).toBe(true);
+    expect(isAllowedHostOrigin(ALLOWED, [ALLOWED])).toBe(true);
+    expect(isAllowedHostOrigin(`${ALLOWED}/`, [ALLOWED])).toBe(true);
+    expect(isAllowedHostOrigin(`${ALLOWED}/checkout?x=1`, [ALLOWED])).toBe(true);
   });
 
   it("refuses a lookalike that a startsWith check would let through", () => {
     /* The reason origins are compared as parsed origins rather than strings.
-       Every one of these begins with the allowed value. */
-    expect(isAllowedHostOrigin("http://localhost:3000.evil.com", [ALLOWED])).toBe(false);
-    expect(isAllowedHostOrigin("http://localhost:30000", [ALLOWED])).toBe(false);
-    expect(isAllowedHostOrigin("https://localhost:3000", [ALLOWED])).toBe(false);
+       The first of these begins with the allowed value; the rest differ only in
+       a part a careless comparison would skip over. */
+    expect(isAllowedHostOrigin(`${ALLOWED}.evil.com`, [ALLOWED])).toBe(false);
+    expect(isAllowedHostOrigin("https://evil-perch-demo-store.vercel.app", [ALLOWED])).toBe(false);
+    expect(isAllowedHostOrigin("http://perch-demo-store.vercel.app", [ALLOWED])).toBe(false);
+  });
+
+  it("treats a different port as a different origin", () => {
+    /* It is, and forgetting that is how a checkout ends up trusting whatever
+       else the visitor happens to be running. */
+    expect(isAllowedHostOrigin("http://localhost:3000", ["http://localhost:3000"])).toBe(true);
+    expect(isAllowedHostOrigin("http://localhost:30000", ["http://localhost:3000"])).toBe(false);
+    expect(isAllowedHostOrigin("http://localhost:4000", ["http://localhost:3000"])).toBe(false);
   });
 
   it("refuses schemes that are not http or https", () => {
@@ -43,6 +60,28 @@ describe("origin allowlist", () => {
     expect(isAllowedHostOrigin(undefined, [ALLOWED])).toBe(false);
     expect(isAllowedHostOrigin("", [ALLOWED])).toBe(false);
     expect(isAllowedHostOrigin("not a url", [ALLOWED])).toBe(false);
+  });
+});
+
+describe("the shipped allowlist", () => {
+  it("does not trust localhost outside development", () => {
+    /* Jest runs with NODE_ENV=test, which is not development, so this is the
+       list a deployed build would use. A production checkout that keeps
+       localhost on its allowlist can be framed by anything a visitor happens to
+       be running on that port on their own machine. */
+    const isDevelopment = process.env.NODE_ENV === "development";
+    expect(isDevelopment).toBe(false);
+
+    for (const origin of ALLOWED_HOST_ORIGINS) {
+      expect(origin).not.toMatch(/localhost|127\.0\.0\.1|^http:\/\//);
+    }
+  });
+
+  it("carries every hostname the deployed store answers on", () => {
+    /* One deployment answers on several names. Registering one of them is how
+       a checkout ends up working for whoever tested it and refusing everyone
+       who arrived by a different route. */
+    expect(ALLOWED_HOST_ORIGINS.length).toBeGreaterThanOrEqual(3);
   });
 });
 

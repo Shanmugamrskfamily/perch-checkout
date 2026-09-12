@@ -12,12 +12,12 @@
  */
 
 /**
- * The demo store, locally and deployed.
+ * The deployed store.
  *
  * Committed rather than configured because this repository has exactly one
  * merchant and its address is not a secret. `NEXT_PUBLIC_ALLOWED_HOST_ORIGINS`
- * still overrides it, which is how a real deployment would drive this — from a
- * per-merchant list of the domains registered during onboarding.
+ * overrides it entirely, which is how a real deployment would drive this — from
+ * a per-merchant list of the domains registered during onboarding.
  *
  * **All three of the store's hostnames are listed, and that is the point.** One
  * deployment answers on several: a short alias, a longer team-scoped one, and a
@@ -31,12 +31,30 @@
  * that trusts `*.vercel.app` trusts every account on Vercel. Previews being
  * refused is the allowlist working, not failing.
  */
-const DEFAULT_ORIGINS = [
-  "http://localhost:3000",
+const PRODUCTION_ORIGINS = [
   "https://perch-demo-store.vercel.app",
   "https://perch-demo-store-shanmugamrskfamilys-projects.vercel.app",
   "https://perch-demo-store-git-main-shanmugamrskfamilys-projects.vercel.app",
 ];
+
+/** The store's dev server. Never reachable from a deployed build. */
+const DEVELOPMENT_ORIGINS = ["http://localhost:3000"];
+
+/**
+ * Development trusts localhost. Production does not, and must not.
+ *
+ * A deployed checkout that keeps `http://localhost:3000` on its allowlist can
+ * be framed by anything a visitor happens to be running on that port on their
+ * own machine. The practical risk is small, but it is entirely avoidable, and
+ * shipping a development convenience into a production security boundary is the
+ * kind of thing that is only ever discovered by someone else.
+ *
+ * The two lists are also disjoint on purpose. Development has no business
+ * framing the live checkout either: if that worked, a local page could be used
+ * to exercise production, and the boundary would mean less than it claims.
+ */
+const DEFAULT_ORIGINS =
+  process.env.NODE_ENV === "development" ? DEVELOPMENT_ORIGINS : PRODUCTION_ORIGINS;
 
 function parse(raw: string | undefined): string[] {
   if (!raw) return DEFAULT_ORIGINS;

@@ -209,6 +209,14 @@ Two layers, doing different jobs:
 
 - `frame-ancestors` in the Content Security Policy. The browser refuses to render
   the checkout inside a page that is not on the list. This is the enforcement.
+  **The list differs by environment**: development trusts `localhost:3000` and
+  nothing else, production trusts the deployed store's hostnames and not
+  localhost. A deployed checkout that kept localhost on its allowlist could be
+  framed by anything a visitor happened to be running on that port on their own
+  machine, and a development convenience has no business inside a production
+  security boundary. Setting `NEXT_PUBLIC_ALLOWED_HOST_ORIGINS` replaces the
+  list entirely rather than adding to it, because an allowlist you can only
+  extend is one nobody can tighten.
 - An in-page check that compares the origin the SDK claims in the URL against the
   referrer the browser sets, which a framing page cannot forge. This produces an
   explanation a human can read, and covers the case where a merchant's registered
