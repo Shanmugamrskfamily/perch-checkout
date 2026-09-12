@@ -19,6 +19,13 @@
  * still overrides it, which is how a real deployment would drive this — from a
  * per-merchant list of the domains registered during onboarding.
  *
+ * **All three of the store's hostnames are listed, and that is the point.** One
+ * deployment answers on several: a short alias, a longer team-scoped one, and a
+ * per-branch one. Registering a single address and assuming it is "the" address
+ * is how a merchant ends up with a checkout that works when they test it and
+ * refuses for half their customers. This repository learned that the hard way,
+ * from a real refusal in production on the short alias.
+ *
  * Note what is deliberately absent: a wildcard for Vercel preview URLs. Preview
  * deployments get a fresh hostname each time and would need one, and a checkout
  * that trusts `*.vercel.app` trusts every account on Vercel. Previews being
@@ -26,7 +33,9 @@
  */
 const DEFAULT_ORIGINS = [
   "http://localhost:3000",
+  "https://perch-demo-store.vercel.app",
   "https://perch-demo-store-shanmugamrskfamilys-projects.vercel.app",
+  "https://perch-demo-store-git-main-shanmugamrskfamilys-projects.vercel.app",
 ];
 
 function parse(raw: string | undefined): string[] {

@@ -17,7 +17,7 @@ import { CHECKOUT_ORIGIN } from "@/lib/perch";
 /** Where this store is served from, so social previews get absolute URLs. */
 const SITE = process.env.NEXT_PUBLIC_SITE_ORIGIN
   ? new URL(process.env.NEXT_PUBLIC_SITE_ORIGIN)
-  : new URL("https://perch-demo-store-shanmugamrskfamilys-projects.vercel.app");
+  : new URL("https://perch-demo-store.vercel.app");
 
 export const metadata: Metadata = {
   /* `metadataBase` is what turns the generated preview image into an absolute

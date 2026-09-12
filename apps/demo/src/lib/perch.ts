@@ -38,7 +38,7 @@ declare global {
 }
 
 /** The deployed checkout. Overridden by the environment variable when set. */
-const HOSTED_CHECKOUT = "https://perch-checkout-app-shanmugamrskfamilys-projects.vercel.app";
+const HOSTED_CHECKOUT = "https://perch-checkout-app.vercel.app";
 
 /**
  * Where the checkout is served from. The same origin serves `perch.js`.

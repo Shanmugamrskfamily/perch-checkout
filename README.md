@@ -7,9 +7,9 @@ page, the customer pays without leaving it, and the card details never touch it.
 
 | | |
 |---|---|
-| **Demo store** | https://perch-demo-store-shanmugamrskfamilys-projects.vercel.app |
-| **Checkout** | https://perch-checkout-app-shanmugamrskfamilys-projects.vercel.app |
-| **Embed script** | https://perch-checkout-app-shanmugamrskfamilys-projects.vercel.app/perch.js |
+| **Demo store** | https://perch-demo-store.vercel.app |
+| **Checkout** | https://perch-checkout-app.vercel.app |
+| **Embed script** | https://perch-checkout-app.vercel.app/perch.js |
 | **Source** | https://github.com/Shanmugamrskfamily/perch-checkout |
 
 Start at the demo store. The two are separate Vercel projects on separate
@@ -434,9 +434,17 @@ domains a merchant registered during onboarding.
 The checkout's build compiles `perch.js` into its own `public/` directory before
 Next runs, so the script ships from the checkout's origin.
 
-**Preview deployments will not work, by design.** Vercel gives every preview a
-fresh hostname, which is not on the `frame-ancestors` allowlist, so the checkout
-refuses to render in one. The fix is not a `*.vercel.app` wildcard — that would
+**One deployment answers on several hostnames, and the allowlist needs all of
+them.** Vercel gives each project a short alias, a team-scoped one, and a
+per-branch one. Registering only one is how you end up with a checkout that
+works when you test it and refuses for anyone who arrives by a different name.
+This happened here: the store was reached on its short alias and the checkout
+correctly refused to be framed, because that hostname was not registered. All
+three are listed now. It is a good failure to have had — the allowlist was doing
+exactly its job on an address I had not told it about.
+
+**Preview deployments still will not work, by design.** Every preview gets a
+fresh hostname, and the fix is not a `*.vercel.app` wildcard, because that would
 mean trusting every account on Vercel. Use the production URLs above.
 
 Deployment protection is off on both projects. A checkout behind an SSO redirect
