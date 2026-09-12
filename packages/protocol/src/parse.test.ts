@@ -90,6 +90,14 @@ describe("frame to host messages", () => {
     expect(parseFrameMessage(forged, CHANNEL)).toBeNull();
   });
 
+  it("accepts a deferred close", () => {
+    /* The message that tells the host the checkout is alive and deliberately
+       holding, so its force-close backstop stands down. */
+    expect(parseFrameMessage(envelope(CHANNEL, { type: "closeDeferred" }), CHANNEL)).toEqual({
+      type: "closeDeferred",
+    });
+  });
+
   it("refuses a close reason that is not one of ours", () => {
     const forged = envelope(CHANNEL, { type: "closed", reason: "whatever" });
     expect(parseFrameMessage(forged, CHANNEL)).toBeNull();

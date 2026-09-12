@@ -51,6 +51,14 @@ interface HostChannel {
   readonly reportFailure: (code: ErrorCode, message: string) => void;
   readonly reportClosed: (reason: CloseReason) => void;
   /**
+   * Tells the host we heard its close request and are holding.
+   *
+   * Only meaningful mid-payment, where the customer is being asked to confirm.
+   * It stands down the host's force-close backstop, which exists for a frame
+   * that has stopped answering rather than one that is deliberately waiting.
+   */
+  readonly reportCloseDeferred: () => void;
+  /**
    * Registers what should happen when the merchant's page asks to close.
    *
    * The screen decides, not the transport: mid-payment, "close" should mean
@@ -241,6 +249,9 @@ export function HostChannelProvider({
       },
       reportClosed(reason) {
         send({ type: "closed", reason });
+      },
+      reportCloseDeferred() {
+        send({ type: "closeDeferred" });
       },
       setCloseRequestHandler(handler) {
         closeHandlerRef.current = handler;

@@ -22,19 +22,53 @@ import type { Product } from "@/lib/catalog";
 export function OrderSummary({
   product,
   charge,
+  onClose,
 }: {
   product: Product;
   /** Null until the customer has said where they are. */
   charge: Charge | null;
+  /** Leaves without paying. See the note on the button below. */
+  onClose: () => void;
 }) {
   const local = charge ? approximateLocal(charge.total, charge.region) : null;
 
   return (
     <div className="flex flex-col gap-3.5 border-b border-line px-5 pb-4 pt-5 sm:gap-4 sm:px-6 sm:pb-5 sm:pt-6">
       <div className="flex flex-col gap-3">
-        <p className="text-[12px] font-medium uppercase tracking-[0.07em] text-ink-faint">
-          {product.merchant}
-        </p>
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-[12px] font-medium uppercase tracking-[0.07em] text-ink-faint">
+            {product.merchant}
+          </p>
+
+          {/*
+            A visible way out.
+
+            On a desktop you can press Escape or click the backdrop. On a phone
+            the sheet fills the screen, there is no Escape key, and the backdrop
+            is a strip at the top that nothing advertises — so without this a
+            customer who changed their mind is stuck in a payment form. Being
+            trapped in a checkout is a good way to never be trusted with a card
+            again.
+
+            It routes through the same decision point as every other way of
+            leaving, so mid-payment it asks rather than vanishing.
+          */}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close checkout"
+            className="-mr-2 -mt-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-faint transition-colors duration-150 hover:bg-sunken hover:text-ink"
+          >
+            <svg width="15" height="15" viewBox="0 0 15 15" aria-hidden="true">
+              <path
+                d="M3.5 3.5l8 8M11.5 3.5l-8 8"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+        </div>
 
         <div className="flex items-start justify-between gap-4">
           <div className="flex flex-col gap-0.5">

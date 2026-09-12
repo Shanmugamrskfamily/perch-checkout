@@ -109,6 +109,15 @@ export type FrameMessage =
   | { readonly type: "succeeded"; readonly sessionId: string }
   /** Terminal failure. Recoverable problems never reach the host. */
   | { readonly type: "failed"; readonly code: ErrorCode; readonly message: string }
+  /**
+   * The checkout heard the close request and is not closing yet.
+   *
+   * Sent when a charge is in flight and the customer is being asked to confirm.
+   * Without it the host cannot tell "alive and deliberately holding" apart from
+   * "dead and never going to answer", so its safety timeout would force-close
+   * over the top of the confirmation and defeat it.
+   */
+  | { readonly type: "closeDeferred" }
   /** The checkout is finished and can be torn down. */
   | { readonly type: "closed"; readonly reason: CloseReason };
 

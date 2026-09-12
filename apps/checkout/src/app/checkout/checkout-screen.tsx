@@ -47,8 +47,14 @@ import { StatusNote } from "./components/status-note";
 import { Receipt } from "./components/receipt";
 
 export function CheckoutScreen() {
-  const { link, reportSuccess, reportFailure, reportClosed, setCloseRequestHandler } =
-    useHostChannel();
+  const {
+    link,
+    reportSuccess,
+    reportFailure,
+    reportClosed,
+    reportCloseDeferred,
+    setCloseRequestHandler,
+  } = useHostChannel();
   const [state, dispatch] = useReducer(reduce, undefined, initialState);
 
   const linked = link.status === "linked";
@@ -202,19 +208,31 @@ export function CheckoutScreen() {
     else reportClosed("dismissed");
   }, [phase, reportClosed]);
 
+  /**
+   * Every way of leaving ends up here.
+   *
+   * The close button in the corner, the Escape key, a click on the backdrop,
+   * and the merchant calling `close()` on the handle are four different
+   * gestures that all mean the same thing, and they must not be able to
+   * disagree about what happens. Mid-charge the answer is to ask first,
+   * because vanishing while money may be moving is the one thing a checkout
+   * must never do.
+   */
+  const requestExit = useCallback(() => {
+    if (phase.status === "paying") {
+      dispatch({ type: "exitRequested" });
+      /* Say so, whether or not the request came from the host. Harmless when it
+         did not, and essential when it did. */
+      reportCloseDeferred();
+      return;
+    }
+    close();
+  }, [phase.status, close, reportCloseDeferred]);
+
   useEffect(() => {
-    /* The host asks; this decides. Mid-charge the answer is "ask the customer
-       first", because vanishing while money may be moving is the one thing a
-       checkout must never do. */
-    setCloseRequestHandler(() => {
-      if (phase.status === "paying") {
-        dispatch({ type: "exitRequested" });
-        return;
-      }
-      close();
-    });
+    setCloseRequestHandler(requestExit);
     return () => setCloseRequestHandler(null);
-  }, [phase.status, close, setCloseRequestHandler]);
+  }, [requestExit, setCloseRequestHandler]);
 
   // -- rendering -------------------------------------------------------------
 
@@ -269,7 +287,7 @@ export function CheckoutScreen() {
         />
       ) : product ? (
         <>
-          <OrderSummary product={product} charge={taxed} />
+          <OrderSummary product={product} charge={taxed} onClose={requestExit} />
 
           <form
             onSubmit={onSubmit}

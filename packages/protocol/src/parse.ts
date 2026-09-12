@@ -186,6 +186,9 @@ export function parseFrameMessage(data: unknown, channel: string): FrameMessage 
       return { type: "failed", code: code as ErrorCode, message: text };
     }
 
+    case "closeDeferred":
+      return { type: "closeDeferred" };
+
     case "closed": {
       const reason = message["reason"];
       if (!isOneOf(reason, CLOSE_REASONS)) return null;

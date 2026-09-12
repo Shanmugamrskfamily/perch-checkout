@@ -26,8 +26,14 @@ import {
 } from "@perch/protocol";
 import { READY_TIMEOUT_MS, createOverlay, type Overlay } from "./overlay";
 
-/** How long to wait for a polite close before forcing it. */
-const CLOSE_GRACE_MS = 2_500;
+/**
+ * How long to wait for a polite close before forcing it.
+ *
+ * This is a backstop for a frame that has stopped answering, not a race against
+ * the checkout's own confirmation dialog: a checkout that is deliberately
+ * holding says so, and that stands the timer down.
+ */
+const CLOSE_GRACE_MS = 4_000;
 
 export interface SessionCallbacks {
   readonly onSuccess?: ((result: { sessionId: string }) => void) | undefined;
@@ -141,6 +147,13 @@ export function startSession(config: SessionConfig): Session {
         safely("onError", () => config.onError?.({ code, message: text }));
         return;
       }
+
+      case "closeDeferred":
+        /* The checkout is asking the customer to confirm rather than ignoring
+           us, so the force-close backstop stands down. It only exists for a
+           frame that has stopped answering. */
+        window.clearTimeout(closeTimer);
+        return;
 
       case "closed":
         finish(message.reason);
