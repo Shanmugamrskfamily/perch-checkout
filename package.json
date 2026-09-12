@@ -10,6 +10,15 @@
   "engines": {
     "node": ">=20.9.0"
   },
+  "//browserslist": "The floor is set by the tools rather than chosen freely: Tailwind 4 needs Safari 16.4 and Chrome 111, and Next 16 states the same. Writing it down makes it a decision instead of an accident, and gives the CSS pipeline a target to prefix against rather than guessing.",
+  "browserslist": [
+    "chrome >= 111",
+    "edge >= 111",
+    "firefox >= 128",
+    "safari >= 16.4",
+    "ios_saf >= 16.4",
+    "not dead"
+  ],
   "scripts": {
     "build:sdk": "npm run build --workspace @perch/sdk",
     "watch:sdk": "npm run watch --workspace @perch/sdk",

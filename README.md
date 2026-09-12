@@ -361,13 +361,17 @@ Roughly in the order I would actually do them.
 - **Error reporting.** If this breaks on someone else's site today, nobody finds
   out. An embed running on hosts you do not control needs to tell you when it
   fails, and needs to do that without ever carrying card data with it.
-- **Browsers I do not own.** This has been exercised in Chrome, on Windows,
-  against one cooperative host page. A stranger's website means Safari and
-  Firefox, iOS especially, where iframes, keyboards and viewport units are known
-  to misbehave inside payment sheets. It also means hosts with their own modals
-  competing for focus and content policies that may refuse our script. I have no
-  evidence either way there, which for an embeddable product is the gap that
-  matters most.
+- **Browsers I do not own.** This has been exercised in Chrome on Windows,
+  against one cooperative host page. The known Safari and iOS hazards have been
+  removed rather than left to chance — see [Browser support](#browser-support)
+  — but removing known hazards is not the same as having tested, and I am not
+  going to describe it as if it were. What remains untested is the iOS keyboard
+  in particular: when it opens over a sheet inside a cross-origin frame, the
+  frame cannot scroll its own focused field into view because the scrolling
+  container belongs to the parent document. Fixing that properly means another
+  message in the protocol, and I would want a real device in front of me before
+  designing it. It also means hosts with their own modals competing for focus,
+  and content policies that may refuse our script.
 - **A browser-level test of the cross-origin flow.** The message contract and the
   state machine are covered by unit tests, but the handshake itself is verified by
   hand. Playwright can drive two origins and would close that gap.
@@ -375,6 +379,24 @@ Roughly in the order I would actually do them.
   should say when the issuer gives a specific reason.
 
 ---
+
+## Browser support
+
+Chrome and Edge 111+, Firefox 128+, Safari and iOS Safari 16.4+. That floor is
+set by the tools rather than chosen freely — Tailwind 4 and Next 16 both require
+roughly it — and it is written into `browserslist` so it is a decision rather
+than an accident.
+
+Verified in Chrome on Windows. For the browsers I could not run, the known
+hazards have been removed rather than hoped about:
+
+| Hazard | What it does | What was done |
+|---|---|---|
+| `backdrop-filter` unprefixed | Silently no-ops in Safari 16 and 17, a large slice of iPhones in use | `-webkit-` prefix alongside it; the backdrop colour carries the separation regardless |
+| Input font size under 16px | iOS zooms the whole page when the field takes focus, lurching the sheet mid-card-number | Inputs go to 16px under `pointer: coarse`, desktop keeps 15px |
+| Mobile keyboard helpfulness | Autocorrect rewrites card numbers, autocapitalise shouts email addresses back | `autocorrect`, `autocapitalize` and `spellcheck` off on every field |
+| Tap highlight | iOS paints a grey rectangle over whatever is tapped | `-webkit-tap-highlight-color: transparent` on the overlay |
+| Animations that never run | A checkout that stays invisible forever | Every element rests visible and animates in from hidden |
 
 ## Testing
 

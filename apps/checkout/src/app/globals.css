@@ -65,6 +65,27 @@ body {
   --color-accent-strong: var(--perch-accent-strong, #0a464b);
 }
 
+/**
+ * iOS Safari zooms the whole page in when a text field smaller than sixteen
+ * pixels takes focus.
+ *
+ * In a payment sheet that is genuinely disruptive rather than merely untidy:
+ * the form lurches, the overlay shifts under it, and the customer is left
+ * pinching back out halfway through a card number. Fifteen pixels is the right
+ * size on a desktop, so the floor is raised only where a finger is involved.
+ *
+ * Written outside a cascade layer on purpose. Tailwind's utilities live in
+ * layers, and unlayered rules beat layered ones regardless of specificity,
+ * which is what lets this override the size utility on the inputs themselves.
+ */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
 /* Focus is never removed, only replaced. Somebody paying by keyboard needs to
    know where they are, and this is the last place to be clever about it. */
 :focus-visible {

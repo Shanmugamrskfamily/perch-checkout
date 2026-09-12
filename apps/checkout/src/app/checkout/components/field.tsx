@@ -52,6 +52,14 @@ export function Field({ label, problem, adornment, aside, hint, ...input }: Fiel
         <input
           {...input}
           id={id}
+          /* Mobile keyboards are helpful by default and it is the wrong
+             instinct here. Autocorrect will happily rewrite a card number,
+             autocapitalise will shout an email address back at you, and a
+             spellcheck underline under sixteen digits looks like an error the
+             customer cannot fix. */
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
           aria-invalid={problem ? true : undefined}
           aria-describedby={problem ? problemId : hint ? hintId : undefined}
           className={[

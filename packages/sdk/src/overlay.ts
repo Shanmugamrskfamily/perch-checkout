@@ -85,12 +85,19 @@ const STYLES = `
   overflow-y: auto;
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
+  /* Stops iOS painting a grey rectangle over whatever the customer taps. */
+  -webkit-tap-highlight-color: transparent;
 }
 
 .backdrop {
   position: fixed;
   inset: 0;
   background: rgba(12, 15, 18, 0.58);
+  /* Safari only dropped the prefix in version 18, so an unprefixed declaration
+     alone silently does nothing in Safari 16 and 17 — a large slice of iPhones
+     in use. The colour underneath carries the separation on its own, so the
+     blur is decoration, but it is one line to have it everywhere. */
+  -webkit-backdrop-filter: blur(3px);
   backdrop-filter: blur(3px);
 }
 
