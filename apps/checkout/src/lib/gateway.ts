@@ -34,7 +34,10 @@ export const TEST_CARDS = [
   },
 ] as const;
 
-const SUCCESS_CARD = "4242424242424242";
+/* Any other well-formed card is approved. See `execute` for why. */
+
+/* Only the two cards that behave unusually need naming. The approving one from
+   the brief takes the same path as every other valid card. */
 const DECLINE_CARD = "4000000000000002";
 const FLAKY_CARD = "4000000000000341";
 
@@ -154,17 +157,21 @@ async function execute(request: ChargeRequest): Promise<ChargeResult> {
     };
   }
 
-  if (digits === SUCCESS_CARD || digits === FLAKY_CARD) {
-    return { outcome: "succeeded", sessionId: newSessionId(), last4: tail };
-  }
-
-  /* Anything else is a card the test gateway has never heard of. Declining it
-     is more honest than approving it and pretending. */
-  return {
-    outcome: "declined",
-    reason: "insufficient_funds",
-    message: "Your bank turned this payment down. Nothing has been charged.",
-  };
+  /**
+   * Everything else is approved.
+   *
+   * The brief names three cards and says what each does. It says nothing about
+   * the rest, and an earlier version of this declined them, on the reasoning
+   * that approving a card it had never heard of was a kind of pretending.
+   *
+   * That was the wrong call for the person on the other side of it. Anything
+   * reaching here has already passed the Luhn check, has the right number of
+   * digits for its network, has not expired, and carries a security code of the
+   * right length — the checkout will not submit otherwise. Refusing a card that
+   * looks entirely correct teaches whoever is trying this that the form is
+   * broken, not that the card was.
+   */
+  return { outcome: "succeeded", sessionId: newSessionId(), last4: tail };
 }
 
 /** `cs_` for checkout session, matching the shape merchants see elsewhere. */

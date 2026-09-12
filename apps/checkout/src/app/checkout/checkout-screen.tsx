@@ -40,7 +40,7 @@ import {
   visibleProblems,
 } from "@/lib/payment-machine";
 import { Field, SelectField } from "./components/field";
-import { CardBrandMark } from "./components/card-brand";
+import { AcceptedCards } from "./components/card-brand";
 import { OrderSummary } from "./components/order-summary";
 import { PayButton } from "./components/pay-button";
 import { StatusNote } from "./components/status-note";
@@ -332,7 +332,9 @@ export function CheckoutScreen() {
               value={form.number}
               disabled={busy}
               problem={problems.number}
-              adornment={<CardBrandMark brand={brand} />}
+              /* The row reacts as the first digits land, which is the moment a
+                 customer is deciding whether this form knows what it is doing. */
+              aside={<AcceptedCards detected={brand} />}
               onChange={(e) =>
                 dispatch({
                   type: "fieldChanged",
@@ -370,6 +372,10 @@ export function CheckoutScreen() {
                 value={form.cvc}
                 disabled={busy}
                 problem={problems.cvc}
+                /* Where to look, not how many digits. People hunting for the
+                   number on the wrong side of the card is the actual problem
+                   this sentence solves. */
+                hint={brand === "amex" ? "Four digits, front" : "Three digits, back"}
                 onChange={(e) =>
                   dispatch({
                     type: "fieldChanged",
@@ -407,9 +413,18 @@ export function CheckoutScreen() {
               </p>
             ) : null}
 
-            <p className="text-center text-[11.5px] leading-relaxed text-ink-faint">
-              Your card details are entered on Perch, not on {product.merchant}.
-            </p>
+            {/* Not a badge. A padlock and the word "secure" are wallpaper by now,
+                and customers have learned to ignore them because anyone can draw
+                one. Saying what actually protects them is both truer and more
+                reassuring, and it names the shop so the claim is checkable. */}
+            <div className="flex items-start gap-2.5 rounded-[10px] bg-sunken px-3.5 py-3">
+              <Padlock />
+              <p className="text-[11.5px] leading-relaxed text-ink-soft">
+                <span className="font-medium text-ink">Your card stays with Perch.</span> You are
+                typing into Perch, not into {product.merchant}, and their website cannot read this
+                form.
+              </p>
+            </div>
           </form>
         </>
       ) : null}
@@ -450,6 +465,24 @@ function ExitConfirm({ onStay }: { onStay: () => void }) {
         </button>
       </div>
     </div>
+  );
+}
+
+function Padlock() {
+  return (
+    <svg
+      width="13"
+      height="15"
+      viewBox="0 0 13 15"
+      aria-hidden="true"
+      className="mt-px shrink-0"
+      fill="none"
+      stroke="var(--color-ink-soft)"
+      strokeWidth="1.4"
+    >
+      <rect x="1" y="6" width="11" height="8" rx="2" />
+      <path d="M3.6 6V4a2.9 2.9 0 0 1 5.8 0v2" strokeLinecap="round" />
+    </svg>
   );
 }
 

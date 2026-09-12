@@ -145,9 +145,25 @@ describe("not charging twice", () => {
   });
 });
 
-describe("cards the gateway has never heard of", () => {
-  it("declines rather than approving out of politeness", async () => {
-    const result = await succeed(request({ cardNumber: "5555 5555 5555 4444" }));
+describe("every other well-formed card", () => {
+  /* Anything reaching the gateway has already passed validation: right length
+     for its network, passes Luhn, in date, security code the right size. An
+     earlier version declined these on the grounds that approving a card it had
+     never heard of was a kind of pretending. That was the wrong call — it
+     taught whoever was trying the form that the form was broken. */
+  it.each([
+    ["5555 5555 5555 4444", "Mastercard"],
+    ["3782 822463 10005", "Amex"],
+    ["6521 0000 0000 0000", "RuPay"],
+    ["3056 930902 5904", "Diners Club"],
+    ["6011 1111 1111 1117", "Discover"],
+  ])("approves %s (%s)", async (cardNumber) => {
+    const result = await succeed(request({ cardNumber }));
+    expect(result.outcome).toBe("succeeded");
+  });
+
+  it("still declines the one card the brief says declines", async () => {
+    const result = await succeed(request({ cardNumber: "4000 0000 0000 0002" }));
     expect(result.outcome).toBe("declined");
   });
 });

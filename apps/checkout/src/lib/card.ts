@@ -11,24 +11,67 @@
  * the code holding card numbers to have no logging in it at all.
  */
 
-export type CardBrand = "visa" | "mastercard" | "amex" | "rupay" | "unknown";
+export type CardBrand =
+  | "visa"
+  | "mastercard"
+  | "amex"
+  | "rupay"
+  | "diners"
+  | "discover"
+  | "jcb"
+  | "unknown";
 
-/** Where the spaces go, per brand. Amex is famously 4-6-5, not 4-4-4-4. */
-const GROUPS: Record<CardBrand, readonly number[]> = {
-  amex: [4, 6, 5],
-  visa: [4, 4, 4, 4],
-  mastercard: [4, 4, 4, 4],
-  rupay: [4, 4, 4, 4],
-  unknown: [4, 4, 4, 4],
+interface BrandSpec {
+  /** Human name, used in labels and for assistive technology. */
+  readonly label: string;
+  /** Where the spaces go. Amex is famously 4-6-5, Diners 4-6-4. */
+  readonly groups: readonly number[];
+  /** How many digits a complete number has. */
+  readonly length: number;
+  /** Security code length. Amex is the odd one at four, on the front. */
+  readonly cvc: number;
+}
+
+/**
+ * The networks this checkout recognises.
+ *
+ * Recognition is for the customer's benefit, not the gateway's. A form that
+ * visibly knows which card you are holding is a form that looks like it has
+ * seen a card before, and that is most of what "trustworthy" means on a payment
+ * screen. The prefixes below are the well-known ranges, not the exhaustive
+ * tables the networks publish: being coarse and correct beats being detailed
+ * and subtly wrong, because a card the form fails to recognise is a customer
+ * who hesitates.
+ */
+const BRANDS: Record<Exclude<CardBrand, "unknown">, BrandSpec> = {
+  visa: { label: "Visa", groups: [4, 4, 4, 4], length: 16, cvc: 3 },
+  mastercard: { label: "Mastercard", groups: [4, 4, 4, 4], length: 16, cvc: 3 },
+  amex: { label: "American Express", groups: [4, 6, 5], length: 15, cvc: 4 },
+  rupay: { label: "RuPay", groups: [4, 4, 4, 4], length: 16, cvc: 3 },
+  diners: { label: "Diners Club", groups: [4, 6, 4], length: 14, cvc: 3 },
+  discover: { label: "Discover", groups: [4, 4, 4, 4], length: 16, cvc: 3 },
+  jcb: { label: "JCB", groups: [4, 4, 4, 4], length: 16, cvc: 3 },
 };
 
-const MAX_DIGITS: Record<CardBrand, number> = {
-  amex: 15,
-  visa: 16,
-  mastercard: 16,
-  rupay: 16,
-  unknown: 19,
-};
+const UNKNOWN: BrandSpec = { label: "Card", groups: [4, 4, 4, 4], length: 16, cvc: 3 };
+
+export function brandSpec(brand: CardBrand): BrandSpec {
+  return brand === "unknown" ? UNKNOWN : BRANDS[brand];
+}
+
+export function brandLabel(brand: CardBrand): string {
+  return brandSpec(brand).label;
+}
+
+/** Order shown in the accepted-cards row. Visa and Mastercard lead by volume. */
+export const DISPLAY_BRANDS: readonly Exclude<CardBrand, "unknown">[] = [
+  "visa",
+  "mastercard",
+  "amex",
+  "rupay",
+  "diners",
+  "discover",
+];
 
 export function digitsOnly(value: string): string {
   return value.replace(/\D/g, "");
@@ -43,24 +86,38 @@ export function digitsOnly(value: string): string {
  */
 export function detectBrand(value: string): CardBrand {
   const digits = digitsOnly(value);
+
   if (/^4/.test(digits)) return "visa";
   if (/^3[47]/.test(digits)) return "amex";
+  /* Diners before JCB: both live in the 3 range and the 36/38/39 prefixes
+     would otherwise be swallowed by a looser 3-digit test. */
+  if (/^3(0[0-5]|095|6|8|9)/.test(digits)) return "diners";
+  if (/^35(2[89]|[3-8][0-9])/.test(digits)) return "jcb";
   if (/^5[1-5]/.test(digits) || /^2[2-7]/.test(digits)) return "mastercard";
-  /* RuPay. Worth recognising rather than falling through to "unknown": it is
-     the domestic network in India, where this shop is, and a customer whose
-     card the form does not appear to recognise is a customer who hesitates. */
-  if (/^(60|65[2-9]|81|82|508)/.test(digits)) return "rupay";
+  /* RuPay and Discover overlap in the 60 and 65 ranges, so order matters and
+     the more specific prefix has to be tested first. Discover's 6011 begins
+     with 60, which a plain RuPay check would otherwise swallow. Beyond that,
+     in a shop based in Bengaluru the domestic network is the likelier card in
+     the customer's hand, so RuPay takes the ambiguous remainder. */
+  if (/^6011/.test(digits)) return "discover";
+  if (/^(60|6521|6522|81|82|508)/.test(digits)) return "rupay";
+  if (/^(64[4-9]|65)/.test(digits)) return "discover";
+
   return "unknown";
 }
 
 /** Inserts brand-appropriate spacing as the customer types. */
 export function formatCardNumber(value: string): string {
   const brand = detectBrand(value);
-  const digits = digitsOnly(value).slice(0, MAX_DIGITS[brand]);
+  const spec = brandSpec(brand);
+  /* An unrecognised number is allowed to run to 19 digits, the longest a card
+     number can be, rather than being truncated at 16 on a guess. */
+  const limit = brand === "unknown" ? 19 : spec.length;
+  const digits = digitsOnly(value).slice(0, limit);
 
   const parts: string[] = [];
   let index = 0;
-  for (const size of GROUPS[brand]) {
+  for (const size of spec.groups) {
     if (index >= digits.length) break;
     parts.push(digits.slice(index, index + size));
     index += size;
@@ -138,7 +195,7 @@ export function isExpired(expiry: Expiry, now: Date = new Date()): boolean {
 }
 
 export function cvcLength(brand: CardBrand): number {
-  return brand === "amex" ? 4 : 3;
+  return brandSpec(brand).cvc;
 }
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -196,11 +253,15 @@ export function validate(form: CardForm, now: Date = new Date()): Partial<Record
   }
 
   const brand = detectBrand(form.number);
+  const spec = brandSpec(brand);
   const digits = digitsOnly(form.number);
   if (digits.length === 0) {
     problems.number = "Enter your card number.";
-  } else if (digits.length < (brand === "amex" ? 15 : 16)) {
-    problems.number = "This card number looks too short.";
+  } else if (digits.length < spec.length) {
+    problems.number =
+      brand === "unknown"
+        ? "This card number looks too short."
+        : `A ${spec.label} number has ${spec.length} digits.`;
   } else if (!passesLuhn(digits)) {
     problems.number = "Check this card number, a digit looks wrong.";
   }
@@ -214,10 +275,11 @@ export function validate(form: CardForm, now: Date = new Date()): Partial<Record
     problems.expiry = "This card has expired.";
   }
 
-  const expectedCvc = cvcLength(brand);
   if (form.cvc.trim().length === 0) {
     problems.cvc = "Enter the security code.";
-  } else if (digitsOnly(form.cvc).length !== expectedCvc) {
+  } else if (digitsOnly(form.cvc).length !== spec.cvc) {
+    /* Amex prints four digits on the front; everyone else prints three on the
+       back. Saying where to look is more useful than saying how many. */
     problems.cvc =
       brand === "amex"
         ? "Amex security codes are four digits, on the front."

@@ -71,8 +71,9 @@ export function TestCards() {
       </ul>
 
       <p className="text-[11.5px] leading-relaxed text-ink-faint">
-        Any expiry in the future and any security code will do. Every other card number is
-        declined.
+        Any expiry in the future and a security code of the right length will do. Any other
+        well-formed card number is approved, so Visa, Mastercard, Amex, RuPay, Diners Club and
+        Discover test numbers all work and the checkout will recognise each one as you type.
       </p>
     </section>
   );

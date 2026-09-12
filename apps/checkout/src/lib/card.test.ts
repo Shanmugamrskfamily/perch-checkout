@@ -28,9 +28,26 @@ describe("card brands", () => {
        whose card the form does not appear to recognise is one who hesitates. */
     ["6521000000000000", "rupay"],
     ["8100000000000000", "rupay"],
+    ["6082000000000000", "rupay"],
+    ["30569309025904", "diners"],
+    ["36700102000000", "diners"],
+    ["3852000000000000", "diners"],
+    ["6011111111111117", "discover"],
+    ["6500000000000000", "discover"],
+    ["3530111333300000", "jcb"],
     ["9999999999999999", "unknown"],
   ])("reads %s as %s", (number, brand) => {
     expect(detectBrand(number)).toBe(brand);
+  });
+
+  it("gives the more specific prefix priority where ranges overlap", () => {
+    /* Discover's 6011 sits inside RuPay's 60, and Diners' 36 and 38 sit next to
+       JCB's 35. Order of testing is the whole implementation here, so it gets
+       asserted rather than trusted. */
+    expect(detectBrand("6011000000000000")).toBe("discover");
+    expect(detectBrand("6012000000000000")).toBe("rupay");
+    expect(detectBrand("3528000000000000")).toBe("jcb");
+    expect(detectBrand("3600000000000000")).toBe("diners");
   });
 });
 
@@ -41,6 +58,11 @@ describe("formatting a card number", () => {
 
   it("groups amex four-six-five, as printed on the card", () => {
     expect(formatCardNumber("378282246310005")).toBe("3782 822463 10005");
+  });
+
+  it("groups Diners four-six-four, and stops at fourteen digits", () => {
+    expect(formatCardNumber("30569309025904")).toBe("3056 930902 5904");
+    expect(formatCardNumber("30569309025904999")).toBe("3056 930902 5904");
   });
 
   it("ignores anything that is not a digit", () => {
@@ -113,6 +135,8 @@ describe("security code length", () => {
     expect(cvcLength("amex")).toBe(4);
     expect(cvcLength("visa")).toBe(3);
     expect(cvcLength("rupay")).toBe(3);
+    expect(cvcLength("diners")).toBe(3);
+    expect(cvcLength("discover")).toBe(3);
   });
 });
 

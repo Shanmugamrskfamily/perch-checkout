@@ -28,24 +28,32 @@ export interface FieldProps
   readonly problem?: string | undefined;
   /** Rendered inside the field's right edge, e.g. a card brand mark. */
   readonly adornment?: ReactNode;
+  /** Sits opposite the label, e.g. the row of accepted card networks. */
+  readonly aside?: ReactNode;
+  /** Quiet help under the field. Hidden while a problem is showing. */
+  readonly hint?: string;
 }
 
-export function Field({ label, problem, adornment, ...input }: FieldProps) {
+export function Field({ label, problem, adornment, aside, hint, ...input }: FieldProps) {
   const id = useId();
   const problemId = `${id}-problem`;
+  const hintId = `${id}-hint`;
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-[13px] font-medium text-ink-soft">
-        {label}
-      </label>
+      <div className="flex min-h-[22px] items-center justify-between gap-3">
+        <label htmlFor={id} className="truncate text-[13px] font-medium text-ink-soft">
+          {label}
+        </label>
+        {aside}
+      </div>
 
       <div className="relative">
         <input
           {...input}
           id={id}
           aria-invalid={problem ? true : undefined}
-          aria-describedby={problem ? problemId : undefined}
+          aria-describedby={problem ? problemId : hint ? hintId : undefined}
           className={[
             "w-full rounded-[10px] border bg-surface px-3 py-2.5 text-[15px] text-ink",
             "placeholder:text-ink-faint",
@@ -67,6 +75,13 @@ export function Field({ label, problem, adornment, ...input }: FieldProps) {
       {problem ? (
         <p id={problemId} role="alert" className="text-[12.5px] leading-snug text-critical">
           {problem}
+        </p>
+      ) : hint ? (
+        /* Help and complaint never appear together. Two lines of small text
+           under one field, one of them red, is how a form starts to feel like
+           an argument. */
+        <p id={hintId} className="text-[12px] leading-snug text-ink-faint">
+          {hint}
         </p>
       ) : null}
     </div>

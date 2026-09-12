@@ -60,8 +60,20 @@ Any future expiry and any security code will do.
 | `4000 0000 0000 0002` | Declined by the issuer. Retrying will not help |
 | `4000 0000 0000 0341` | Connection drops on the first attempt, completes on retry |
 
-Every other card number is declined. The demo store lists these on the page, one
-tap to copy, so a reviewer can reach every state without reading this first.
+**Any other well-formed card is approved.** Right length for its network, passes
+the Luhn check, in date, security code the right size — and it goes through. An
+earlier version declined anything it did not recognise, which taught whoever was
+trying the form that the form was broken rather than that the card was.
+
+So real test numbers for Visa, Mastercard, American Express, RuPay, Diners Club
+and Discover all work, and the row of card marks above the number field reacts as
+you type: the network it recognises stays lit and the rest recede. Amex groups
+itself 4-6-5 and asks for a four-digit code on the front; Diners groups 4-6-4.
+Getting those details right is most of what makes a payment form feel like it has
+seen a card before.
+
+The demo store lists the three special numbers on the page, one tap to copy, so a
+reviewer can reach every state without reading this first.
 
 Other things worth trying: leave the checkout open for three minutes to watch it
 expire, press Escape, tab past the last field, and open it on a phone-width
