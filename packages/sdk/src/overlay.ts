@@ -77,6 +77,20 @@ const STYLES = `
 .root {
   position: fixed;
   inset: 0;
+  /**
+   * Pinned to the dynamic viewport, not the layout one.
+   *
+   * Inset alone resolves against the layout viewport, which on mobile Chrome
+   * extends underneath the address bar and the system navigation bar. The
+   * sheet anchors to the bottom of this box, so without this the Pay button
+   * ends up behind the navigation bar on a real phone, which is exactly where
+   * it was found.
+   *
+   * The vh declaration is the fallback for anything without dvh support; the
+   * second one wins wherever it is understood.
+   */
+  height: 100vh;
+  height: 100dvh;
   z-index: 2147483646;
   display: flex;
   align-items: flex-start;
@@ -211,9 +225,15 @@ iframe {
     margin: 0;
     /* Square at the bottom, because that edge is against the screen. */
     border-radius: 16px 16px 0 0;
-    /* Never taller than the screen. A longer form scrolls inside the overlay
-       root rather than pushing its own buttons out of reach. */
-    max-height: 94dvh;
+    /**
+     * Never taller than the space actually available.
+     *
+     * The root is already bounded by the dynamic viewport, so a percentage
+     * here inherits that and needs no unit of its own. A form longer than the
+     * screen then scrolls inside the frame rather than pushing its own Pay
+     * button somewhere the thumb cannot reach.
+     */
+    max-height: 100%;
   }
 }
 `;

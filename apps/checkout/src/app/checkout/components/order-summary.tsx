@@ -30,7 +30,7 @@ export function OrderSummary({
   const local = charge ? approximateLocal(charge.total, charge.region) : null;
 
   return (
-    <div className="flex flex-col gap-4 border-b border-line px-5 pb-5 pt-6 sm:px-6">
+    <div className="flex flex-col gap-3.5 border-b border-line px-5 pb-4 pt-5 sm:gap-4 sm:px-6 sm:pb-5 sm:pt-6">
       <div className="flex flex-col gap-3">
         <p className="text-[12px] font-medium uppercase tracking-[0.07em] text-ink-faint">
           {product.merchant}

@@ -86,6 +86,18 @@ body {
   }
 }
 
+/**
+ * On a phone the sheet sits flush against the bottom edge of the screen, which
+ * is the right place for it and also where iOS draws its home indicator. The
+ * host keeps the sheet flush; the frame pads its own content out of the way, so
+ * neither side needs to know about the other's layout.
+ */
+@media (max-width: 540px) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
 /* Focus is never removed, only replaced. Somebody paying by keyboard needs to
    know where they are, and this is the last place to be clever about it. */
 :focus-visible {

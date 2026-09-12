@@ -274,7 +274,9 @@ export function CheckoutScreen() {
           <form
             onSubmit={onSubmit}
             noValidate
-            className="flex flex-col gap-4 px-5 py-5 sm:px-6"
+            /* Tighter on a phone. Every pixel saved here is a pixel of form the
+               customer does not have to scroll past to reach the Pay button. */
+            className="flex flex-col gap-3.5 px-5 py-4 sm:gap-4 sm:px-6 sm:py-5"
           >
             {phase.status === "declined" ? (
               <StatusNote tone="critical" title="That card was declined">
