@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!--
+    Perch.
+
+    A bird on a branch, reduced until it still reads at sixteen pixels in a
+    browser tab, which is the only size that really matters for a favicon. The
+    perch itself is the widest element on purpose: it is the part that survives
+    when everything else becomes three grey pixels.
+  -->
+  <rect width="32" height="32" rx="7" fill="#0e5b62" />
+  <g fill="#ffffff">
+    <rect x="5.5" y="22" width="21" height="2.2" rx="1.1" opacity="0.92" />
+    <circle cx="14.5" cy="14.6" r="5.1" />
+    <path d="M18 11.4 L26 6.8 L20.6 15.2 Z" />
+    <rect x="12.9" y="19" width="1.5" height="3.4" rx="0.7" />
+    <rect x="16" y="19" width="1.5" height="3.4" rx="0.7" />
+  </g>
+</svg>

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!--
+    Kestrel Supply Co.
+
+    A monogram, which is what a small shop with no design budget would
+    plausibly have. Deliberately nothing like the Perch mark: the point the
+    demo makes is that the payment surface keeps its own identity on any site
+    that embeds it, and two logos that looked related would undermine it.
+  -->
+  <rect width="32" height="32" rx="7" fill="#1a1712" />
+  <path
+    d="M10.5 8.5 V23.5 M10.5 16.4 L19.5 8.5 M13.6 13.7 L20.8 23.5"
+    stroke="#faf7f2"
+    stroke-width="2.6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  />
+</svg>
