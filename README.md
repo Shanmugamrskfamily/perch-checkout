@@ -50,6 +50,26 @@ second.
 
 ---
 
+## What the brief asked for, and where it is
+
+| The brief | Here |
+|---|---|
+| An SDK script, plain TypeScript, one file a developer drops in | `packages/sdk` → `perch.js`, zero runtime dependencies, served from the checkout's origin |
+| A checkout app: product, email, card, pay | `apps/checkout`, hosted separately, payment faked in-app with no server |
+| The customer never leaves the page | The checkout opens over the merchant's page in an overlay |
+| Yet the card details never touch that page | The form lives in a cross-origin iframe, so the browser itself prevents the merchant reading it |
+| The script stays in touch with the checkout while the customer pays | A typed `postMessage` contract in `packages/protocol`, compiled by both sides |
+| A demo site with a Buy button and a visible callback log | `apps/demo` — a shop, on its own origin, consuming the global through a script tag |
+| `4242 4242 4242 4242` succeeds | Approved first time |
+| `4000 0000 0000 0002` declines | Declined by the issuer, details preserved |
+| `4000 0000 0000 0341` fails once, then succeeds on retry | Connection lost, then completes under the same idempotency key |
+| Use TypeScript | Strict throughout, with `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes` on the SDK |
+
+The four questions it deliberately left open are answered in
+[The open questions](#the-open-questions-and-what-i-decided), the two decisions
+it asked for are in [Two decisions](#two-decisions-i-went-back-and-forth-on),
+and what I would build next is in [What I'd explore next](#what-id-explore-next).
+
 ## Try it
 
 Any future expiry and any security code will do.
@@ -222,6 +242,12 @@ where a real integration would be tempted to get it wrong.
 - DOM is built with `textContent`, never `innerHTML`.
 - No card number is ever logged. The modules that hold one contain no logging at
   all, which is the cheapest way to guarantee it.
+- The reassurance at the foot of the form says what actually protects the
+  customer rather than showing a padlock and the word "secure". Browsers retired
+  the green padlock from their address bars because it taught people that green
+  means safe and phishing sites simply drew one. The lock here is a quiet deep
+  green, and the claim it sits beside — that you are typing into Perch and the
+  shop cannot read this form — is one a fake cannot truthfully copy.
 
 ---
 

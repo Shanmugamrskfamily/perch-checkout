@@ -417,12 +417,14 @@ export function CheckoutScreen() {
                 and customers have learned to ignore them because anyone can draw
                 one. Saying what actually protects them is both truer and more
                 reassuring, and it names the shop so the claim is checkable. */}
-            <div className="flex items-start gap-2.5 rounded-[10px] bg-sunken px-3.5 py-3">
+            <div className="flex items-start gap-2.5 rounded-[10px] border border-positive/15 bg-positive/[0.045] px-3.5 py-3">
               <Padlock />
               <p className="text-[11.5px] leading-relaxed text-ink-soft">
-                <span className="font-medium text-ink">Your card stays with Perch.</span> You are
-                typing into Perch, not into {product.merchant}, and their website cannot read this
-                form.
+                <span className="font-medium text-ink">
+                  Encrypted, and your card stays with Perch.
+                </span>{" "}
+                You are typing into Perch, not into {product.merchant}, and their website cannot
+                read this form.
               </p>
             </div>
           </form>
@@ -468,21 +470,31 @@ function ExitConfirm({ onStay }: { onStay: () => void }) {
   );
 }
 
+/**
+ * The padlock.
+ *
+ * Deep green, not signal green. Browsers retired the bright green padlock from
+ * their address bars for a reason: it taught people that green means safe, and
+ * phishing sites simply drew one. So the colour here is a quiet affirmation and
+ * the actual claim stays in the sentence beside it, which says something a fake
+ * cannot truthfully copy.
+ */
 function Padlock() {
   return (
-    <svg
-      width="13"
-      height="15"
-      viewBox="0 0 13 15"
-      aria-hidden="true"
-      className="mt-px shrink-0"
-      fill="none"
-      stroke="var(--color-ink-soft)"
-      strokeWidth="1.4"
-    >
-      <rect x="1" y="6" width="11" height="8" rx="2" />
-      <path d="M3.6 6V4a2.9 2.9 0 0 1 5.8 0v2" strokeLinecap="round" />
-    </svg>
+    <span className="mt-px flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md bg-positive/10">
+      <svg
+        width="12"
+        height="14"
+        viewBox="0 0 13 15"
+        aria-hidden="true"
+        fill="none"
+        stroke="var(--color-positive)"
+        strokeWidth="1.6"
+      >
+        <rect x="1" y="6" width="11" height="8" rx="2" />
+        <path d="M3.6 6V4a2.9 2.9 0 0 1 5.8 0v2" strokeLinecap="round" />
+      </svg>
+    </span>
   );
 }
 
