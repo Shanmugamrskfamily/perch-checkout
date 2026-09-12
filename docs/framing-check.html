@@ -1,0 +1,87 @@
+<!doctype html>
+<!--
+  A page pretending to be a phishing site.
+
+  Open it straight from disk. A file on your computer has the origin "null",
+  which is not on the checkout's frame-ancestors allowlist, so no server is
+  needed to play the part of an unapproved site.
+
+  What you should see: an empty box where the checkout would be, and a refusal
+  in the browser console naming the frame-ancestors directive. The checkout is
+  not declining politely in JavaScript — it never loads. The browser refuses on
+  its behalf, before a single line of our code runs.
+
+  Change the origin in the URL below to any value you like. It makes no
+  difference: the browser checks where the page actually is, not what it claims.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Framing check — Perch</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 48px 40px;
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        color: #10151b;
+        background: #f7f8fa;
+        line-height: 1.55;
+      }
+      main { max-width: 720px; }
+      h1 { font-size: 22px; margin: 0 0 8px; letter-spacing: -0.02em; }
+      p { margin: 0 0 14px; font-size: 14.5px; color: #4a5361; }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 13px;
+        background: #e9ecf1;
+        padding: 1px 5px;
+        border-radius: 4px;
+      }
+      .frame {
+        margin-top: 24px;
+        width: 420px;
+        height: 380px;
+        border: 1px dashed #b9c0cb;
+        border-radius: 12px;
+        background: #ffffff;
+      }
+      iframe { width: 100%; height: 100%; border: 0; border-radius: 12px; }
+      .note {
+        margin-top: 20px;
+        padding: 12px 14px;
+        border-left: 3px solid #0e5b62;
+        background: #ffffff;
+        font-size: 13.5px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>This page is pretending to be a phishing site</h1>
+      <p>
+        It is trying to embed the real Perch checkout so it can borrow the
+        credibility of a genuine payment form. It is not on the merchant's
+        allowlist, so it should fail.
+      </p>
+      <p>
+        Open the browser console. You should see a refusal naming the
+        <code>frame-ancestors</code> directive, and the box below should stay
+        empty.
+      </p>
+
+      <div class="frame">
+        <iframe
+          title="Perch checkout, which should refuse to load here"
+          src="https://perch-checkout-app.vercel.app/checkout?channel=00000000000000000000000000000000&origin=https%3A%2F%2Fperch-demo-store.vercel.app"
+        ></iframe>
+      </div>
+
+      <p class="note">
+        Note the <code>origin</code> parameter in that URL claims to be the real
+        store. It changes nothing. The browser checks where this page actually
+        is, not what its query string says, which is why the check lives in a
+        response header rather than in our own JavaScript.
+      </p>
+    </main>
+  </body>
+</html>

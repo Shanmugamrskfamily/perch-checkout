@@ -217,8 +217,15 @@ Two layers, doing different jobs:
 Every refusal returns the same message, because telling an attacker which check
 they failed is free help.
 
-Verified against a phishing simulation served from a third origin: the frame
-renders empty and its location is inaccessible from the embedding page.
+**Check it yourself in ten seconds.** Open `docs/framing-check.html` straight
+from disk. A file on your computer has the origin `null`, which is not on the
+allowlist, so it plays the part of an unapproved site without needing a server.
+The box stays empty and the console names the `frame-ancestors` directive.
+
+Note that the page passes an `origin` parameter claiming to be the real store,
+and it changes nothing. The browser checks where the page actually is rather
+than what its query string says, which is exactly why the enforcement lives in a
+response header instead of in our own JavaScript.
 
 ### `onSuccess` is not proof of payment
 
