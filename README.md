@@ -16,6 +16,14 @@ Start at the demo store. The two are separate Vercel projects on separate
 origins, which is the point: if they shared one, the isolation described below
 would be decorative rather than real.
 
+![The checkout opening over the store, taking a payment that loses its connection, and completing on retry](docs/walkthrough.gif)
+
+That is the hardest path on purpose: a card that drops the connection mid-charge
+and completes on the second attempt. Watch the callback log on the right at the
+end. The merchant's page is told `onSuccess` and `onClose`, and never hears
+about the dropped connection at all, because that was recoverable inside the
+checkout and is none of its business.
+
 ---
 
 ## The integration, in full
